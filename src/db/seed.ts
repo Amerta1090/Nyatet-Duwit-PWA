@@ -10,7 +10,7 @@ export async function seedDatabase(): Promise<void> {
       ...cat,
       createdAt: now,
     }));
-    await db.categories.bulkAdd(categories);
+    await db.categories.bulkPut(categories);
   }
 
   const accountCount = await db.accounts.count();
