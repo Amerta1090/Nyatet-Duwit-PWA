@@ -18,6 +18,7 @@ interface TransactionListProps {
   loading?: boolean;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
+  onRowClick?: (tx: Transaction) => void;
 }
 
 function getCategoryMap(categories: Category[]): Record<string, Category> {
@@ -52,7 +53,7 @@ function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
   }));
 }
 
-export function TransactionList({ transactions, categories, accounts, loading, onEdit, onDelete }: TransactionListProps) {
+export function TransactionList({ transactions, categories, accounts, loading, onEdit, onDelete, onRowClick }: TransactionListProps) {
   const categoryMap = useMemo(() => getCategoryMap(categories), [categories]);
   const accountMap = useMemo(() => getAccountMap(accounts), [accounts]);
   const groups = useMemo(() => groupByDate(transactions), [transactions]);
@@ -94,6 +95,7 @@ export function TransactionList({ transactions, categories, accounts, loading, o
                 toAccount={tx.toAccountId ? accountMap[tx.toAccountId] : undefined}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onRowClick={onRowClick}
               />
             ))}
           </div>

@@ -13,9 +13,10 @@ interface TransactionItemProps {
   toAccount?: Account;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
+  onRowClick?: (tx: Transaction) => void;
 }
 
-export function TransactionItem({ transaction: tx, category, account, toAccount, onEdit, onDelete }: TransactionItemProps) {
+export function TransactionItem({ transaction: tx, category, account, toAccount, onEdit, onDelete, onRowClick }: TransactionItemProps) {
   const [swiping, setSwiping] = useState(false);
   const [offsetX, setOffsetX] = useState(0);
   const startX = useRef(0);
@@ -48,7 +49,7 @@ export function TransactionItem({ transaction: tx, category, account, toAccount,
 
   function handleTouchEnd() {
     if (!isDragging.current) {
-      onEdit(tx);
+      onRowClick?.(tx);
       return;
     }
     if (offsetX > 80) {
@@ -62,14 +63,14 @@ export function TransactionItem({ transaction: tx, category, account, toAccount,
     <div className="relative overflow-hidden rounded-xl">
       <div className="absolute right-0 top-0 flex h-full items-center gap-1 px-3">
         <button
-          onClick={() => onEdit(tx)}
+          onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-white"
           aria-label="Edit"
         >
           <Pencil className="h-4 w-4" />
         </button>
         <button
-          onClick={() => onDelete(tx)}
+          onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-danger-500 text-white"
           aria-label="Hapus"
         >
@@ -83,7 +84,7 @@ export function TransactionItem({ transaction: tx, category, account, toAccount,
         onTouchEnd={handleTouchEnd}
         onClick={() => {
           if (isDragging.current) return;
-          onEdit(tx);
+          onRowClick?.(tx);
         }}
         className={cn(
           'relative flex w-full items-center gap-3 bg-white px-4 py-3 text-left transition-transform duration-200 dark:bg-neutral-900',

@@ -8,3 +8,4 @@ export { Toast } from './Toast';
 export { EmptyState } from './EmptyState';
 export { Skeleton } from './Skeleton';
 export { Badge } from './Badge';
+export { ErrorBoundary } from './ErrorBoundary';

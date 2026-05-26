@@ -2,12 +2,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppLayout } from '@/components/layout';
 import { useDatabase } from '@/hooks/useDatabase';
 import { lazy, Suspense } from 'react';
-import { Skeleton } from '@/components/ui';
+import { Skeleton, ErrorBoundary } from '@/components/ui';
 
 const HomePage = lazy(() => import('@/pages/Home'));
 const TransactionsPage = lazy(() => import('@/pages/Transactions'));
 const InsightsPage = lazy(() => import('@/pages/Insights'));
 const MorePage = lazy(() => import('@/pages/More'));
+const TransactionDetailPage = lazy(() => import('@/pages/Transactions/Detail'));
 
 function PageLoader() {
   return (
@@ -41,16 +42,19 @@ function AppContent() {
   }
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="transactions" element={<TransactionsPage />} />
-          <Route path="insights" element={<InsightsPage />} />
-          <Route path="more" element={<MorePage />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="transactions/:id" element={<TransactionDetailPage />} />
+            <Route path="insights" element={<InsightsPage />} />
+            <Route path="more" element={<MorePage />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

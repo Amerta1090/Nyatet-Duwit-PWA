@@ -14,12 +14,10 @@ export async function seedDatabase(): Promise<void> {
   }
 
   const accountCount = await db.accounts.count();
-  let primaryAccountId: string | undefined;
 
   if (accountCount === 0) {
-    primaryAccountId = generateId();
     await db.accounts.add({
-      id: primaryAccountId,
+      id: generateId(),
       ...DEFAULT_ACCOUNT,
       balance: 0,
       isPrimary: true,
@@ -28,8 +26,7 @@ export async function seedDatabase(): Promise<void> {
       updatedAt: Date.now(),
     });
   } else {
-    const primary = await db.accounts.where('isPrimary').equals(1).first();
-    primaryAccountId = primary?.id;
+    await db.accounts.where('isPrimary').equals(1).first();
   }
 
   const settingsCount = await db.settings.count();
