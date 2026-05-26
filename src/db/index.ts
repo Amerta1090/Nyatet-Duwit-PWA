@@ -1,2 +1,2 @@
 export { db } from './schema';
-export { seedDatabase } from './seed';
+export { seedDatabase, seedDummyData } from './seed';
