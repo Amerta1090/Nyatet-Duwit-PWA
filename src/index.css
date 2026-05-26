@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-primary-50: #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-500: #3B82F6;
+  --color-primary-600: #1E40AF;
+  --color-primary-700: #1D4ED8;
+  --color-primary-900: #1E3A8A;
+
+  --color-accent-50: #ECFDF5;
+  --color-accent-500: #10B981;
+  --color-accent-600: #059669;
+
+  --color-danger-50: #FEF2F2;
+  --color-danger-500: #EF4444;
+  --color-danger-600: #DC2626;
+
+  --color-neutral-50: #F8FAFC;
+  --color-neutral-100: #F1F5F9;
+  --color-neutral-500: #64748B;
+  --color-neutral-700: #334155;
+  --color-neutral-900: #0F172A;
+
+  --animate-slide-up: slide-up 0.2s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+:root {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #FFFFFF;
+  color: #0F172A;
+  overscroll-behavior: none;
+}
+
+.dark body {
+  background: #0F172A;
+  color: #F8FAFC;
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
