@@ -51,7 +51,15 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
 
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.isArchived), [accounts]);
 
-  const isValid = amount.trim().length > 0 && Number(amount) > 0 && categoryId !== null && accountId !== null;
+  const sourceAccount = useMemo(
+    () => activeAccounts.find((a) => a.id === accountId),
+    [activeAccounts, accountId],
+  );
+
+  const isValid = amount.trim().length > 0 && Number(amount) > 0 && categoryId !== null && accountId !== null
+    && (type !== 'transfer' || toAccountId !== null);
+
+  const transferInsufficient = type === 'transfer' && sourceAccount && Number(amount) > sourceAccount.balance && !editId;
 
   const initializeForm = useCallback(() => {
     if (prefill) {
@@ -261,6 +269,12 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
             className="h-10 w-full rounded-lg border border-neutral-100 bg-white px-3 text-sm placeholder:text-neutral-300 focus:border-primary-500 focus:outline-none dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-100"
           />
         </div>
+
+        {transferInsufficient && (
+          <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+            Saldo {sourceAccount?.name} tidak mencukupi (Rp {Number(amount).toLocaleString('id-ID')} &gt; Rp {sourceAccount?.balance.toLocaleString('id-ID')})
+          </div>
+        )}
 
         <button
           onClick={handleSave}

@@ -10,6 +10,8 @@ const pageTitles: Record<string, string> = {
   '/transactions/': 'Detail Transaksi',
   '/insights': 'Analisis',
   '/more': 'Lainnya',
+  '/more/accounts': 'Akun',
+  '/more/categories': 'Kategori',
 };
 
 const fabRoutes = ['/', '/transactions'];

@@ -9,6 +9,8 @@ const TransactionsPage = lazy(() => import('@/pages/Transactions'));
 const InsightsPage = lazy(() => import('@/pages/Insights'));
 const MorePage = lazy(() => import('@/pages/More'));
 const TransactionDetailPage = lazy(() => import('@/pages/Transactions/Detail'));
+const AccountsPage = lazy(() => import('@/pages/More/Accounts'));
+const CategoriesPage = lazy(() => import('@/pages/More/Categories'));
 
 function PageLoader() {
   return (
@@ -51,6 +53,8 @@ function AppContent() {
             <Route path="transactions/:id" element={<TransactionDetailPage />} />
             <Route path="insights" element={<InsightsPage />} />
             <Route path="more" element={<MorePage />} />
+            <Route path="more/accounts" element={<AccountsPage />} />
+            <Route path="more/categories" element={<CategoriesPage />} />
           </Route>
         </Routes>
       </Suspense>

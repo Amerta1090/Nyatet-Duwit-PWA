@@ -67,4 +67,34 @@ export const accountRepo = {
   async archive(id: string): Promise<void> {
     await db.accounts.update(id, { isArchived: true, updatedAt: Date.now() });
   },
+
+  async reconcileAll(): Promise<{ accountId: string; name: string; expected: number; actual: number; diff: number }[]> {
+    return db.transaction('rw', db.accounts, db.transactions, async () => {
+      const accounts = await db.accounts.toArray();
+      const transactions = await db.transactions.toArray();
+      const results: { accountId: string; name: string; expected: number; actual: number; diff: number }[] = [];
+
+      for (const account of accounts) {
+        let expected = 0;
+        for (const tx of transactions) {
+          if (tx.type === 'income' && tx.accountId === account.id) {
+            expected += tx.amount;
+          } else if (tx.type === 'expense' && tx.accountId === account.id) {
+            expected -= tx.amount;
+          } else if (tx.type === 'transfer') {
+            if (tx.accountId === account.id) expected -= tx.amount;
+            if (tx.toAccountId === account.id) expected += tx.amount;
+          }
+        }
+        const actual = account.balance;
+        const diff = actual - expected;
+        results.push({ accountId: account.id, name: account.name, expected, actual, diff });
+        if (diff !== 0) {
+          await db.accounts.update(account.id, { balance: expected, updatedAt: Date.now() });
+        }
+      }
+
+      return results;
+    });
+  },
 };
