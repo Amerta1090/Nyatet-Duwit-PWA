@@ -1,0 +1,23 @@
+{
+  "packageId": "com.nyatetduwit.app",
+  "host": "https://your-domain.com",
+  "name": "NyatetDuwit",
+  "launcherName": "NyatetDuwit",
+  "display": "standalone",
+  "themeColor": "#1E40AF",
+  "navigationColor": "#1E40AF",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://your-domain.com/icon-512.png",
+  "maskableIconUrl": "https://your-domain.com/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "nyatetduwit"
+  },
+  "appVersionName": "1.0",
+  "appVersionCode": 1,
+  "fallbackType": "customtabs",
+  "enableSiteSettingsShortcut": true
+}

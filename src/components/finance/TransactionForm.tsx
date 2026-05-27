@@ -101,25 +101,42 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
 
     setSaving(true);
     try {
-      const transaction = await transactionRepo.create({
-        type,
-        amount: Number(amount),
-        categoryId: categoryId!,
-        accountId: accountId!,
-        toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
-        date,
-        notes: notes || undefined,
-      });
+      if (editId) {
+        await transactionRepo.update(editId, {
+          type,
+          amount: Number(amount),
+          categoryId: categoryId!,
+          accountId: accountId!,
+          toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
+          date,
+          notes: notes || undefined,
+        });
 
-      updateLastUsed(categoryId!, accountId!, type);
-      vibrate(10);
+        updateLastUsed(categoryId!, accountId!, type);
+        vibrate(10);
+        showToast('Perubahan tersimpan', 'success');
+        onClose();
+      } else {
+        const transaction = await transactionRepo.create({
+          type,
+          amount: Number(amount),
+          categoryId: categoryId!,
+          accountId: accountId!,
+          toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
+          date,
+          notes: notes || undefined,
+        });
 
-      showToast('Transaksi tersimpan', 'success', async () => {
-        await transactionRepo.delete(transaction.id);
-        showToast('Transaksi dibatalkan', 'info');
-      });
+        updateLastUsed(categoryId!, accountId!, type);
+        vibrate(10);
 
-      onClose();
+        showToast('Transaksi tersimpan', 'success', async () => {
+          await transactionRepo.delete(transaction.id);
+          showToast('Transaksi dibatalkan', 'info');
+        });
+
+        onClose();
+      }
     } catch {
       showToast('Gagal menyimpan transaksi', 'error');
     } finally {

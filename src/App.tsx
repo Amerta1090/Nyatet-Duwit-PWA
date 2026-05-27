@@ -1,8 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppLayout } from '@/components/layout';
 import { useDatabase } from '@/hooks/useDatabase';
-import { lazy, Suspense } from 'react';
+import { useDeepLink } from '@/hooks/useDeepLink';
+import { InstallPrompt } from '@/components/pwa';
+import { lazy, Suspense, useState, useCallback } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
+import { TransactionForm } from '@/components/finance/TransactionForm';
+import type { Transaction } from '@/types';
 
 const HomePage = lazy(() => import('@/pages/Home'));
 const TransactionsPage = lazy(() => import('@/pages/Transactions'));
@@ -14,6 +18,7 @@ const CategoriesPage = lazy(() => import('@/pages/More/Categories'));
 const BudgetsPage = lazy(() => import('@/pages/More/Budgets'));
 const RecurringPage = lazy(() => import('@/pages/More/Recurring'));
 const ReconcilePage = lazy(() => import('@/pages/More/Reconcile'));
+const SettingsPage = lazy(() => import('@/pages/More/Settings'));
 
 function PageLoader() {
   return (
@@ -26,6 +31,20 @@ function PageLoader() {
 
 function AppContent() {
   const { ready, error } = useDatabase();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+
+  const handleAddTransaction = useCallback(() => {
+    setEditTx(null);
+    setFormOpen(true);
+  }, []);
+
+  const handleFormClose = useCallback(() => {
+    setFormOpen(false);
+    setEditTx(null);
+  }, []);
+
+  useDeepLink({ onAddTransaction: handleAddTransaction });
 
   if (error) {
     return (
@@ -61,9 +80,24 @@ function AppContent() {
             <Route path="more/budgets" element={<BudgetsPage />} />
             <Route path="more/recurring" element={<RecurringPage />} />
             <Route path="more/reconcile" element={<ReconcilePage />} />
+            <Route path="more/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </Suspense>
+      <InstallPrompt />
+      <TransactionForm
+        open={formOpen}
+        onClose={handleFormClose}
+        editId={editTx?.id}
+        prefill={editTx ? {
+          type: editTx.type,
+          amount: editTx.amount,
+          categoryId: editTx.categoryId,
+          accountId: editTx.accountId,
+          date: editTx.date,
+          notes: editTx.notes,
+        } : undefined}
+      />
     </ErrorBoundary>
   );
 }

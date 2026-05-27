@@ -20,6 +20,7 @@ export default function HomePage() {
   const { showToast } = useUIStore();
 
   const [formOpen, setFormOpen] = useState(false);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [totalBalance, setTotalBalance] = useState(0);
   const [recentTxs, setRecentTxs] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -123,8 +124,15 @@ export default function HomePage() {
     loadData();
   }
 
-  function handleEdit() {
+  function handleEdit(tx: Transaction) {
+    setEditTx(tx);
     setFormOpen(true);
+  }
+
+  function handleFormClose() {
+    setFormOpen(false);
+    setEditTx(null);
+    loadData();
   }
 
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
@@ -255,7 +263,16 @@ export default function HomePage() {
 
       <TransactionForm
         open={formOpen}
-        onClose={() => { setFormOpen(false); loadData(); }}
+        onClose={handleFormClose}
+        editId={editTx?.id}
+        prefill={editTx ? {
+          type: editTx.type,
+          amount: editTx.amount,
+          categoryId: editTx.categoryId,
+          accountId: editTx.accountId,
+          date: editTx.date,
+          notes: editTx.notes,
+        } : undefined}
       />
     </div>
   );
