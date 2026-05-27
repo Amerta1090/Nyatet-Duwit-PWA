@@ -29,29 +29,20 @@ export default function HomePage() {
   const [prevIncome, setPrevIncome] = useState(0);
   const [prevExpense, setPrevExpense] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [monthStart, setMonthStart] = useState(0);
-  const [monthEnd, setMonthEnd] = useState(0);
-  const [prevMonthStart, setPrevMonthStart] = useState(0);
-  const [prevMonthEnd, setPrevMonthEnd] = useState(0);
   const [totalBudget, setTotalBudget] = useState(0);
   const [totalBudgetSpent, setTotalBudgetSpent] = useState(0);
   const [overspentCategories, setOverspentCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const now = Date.now();
-    const range = getMonthRange(now);
-    setMonthStart(range.start);
-    setMonthEnd(range.end);
-
+  async function loadData() {
+    const range = getMonthRange(Date.now());
+    const monthStart = range.start;
+    const monthEnd = range.end;
     const d = new Date(range.start);
     d.setMonth(d.getMonth() - 1);
     const prevRange = getMonthRange(d.getTime());
-    setPrevMonthStart(prevRange.start);
-    setPrevMonthEnd(prevRange.end);
-  }, []);
-
-  async function loadData() {
+    const prevMonthStart = prevRange.start;
+    const prevMonthEnd = prevRange.end;
     const [balance, txs, cats, accs, income, expense, prevInc, prevExp, streakDays, budget, overspent] = await Promise.all([
       accountRepo.getTotalBalance(),
       transactionRepo.getAll({ limit: 10 }),
