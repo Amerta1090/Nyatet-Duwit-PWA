@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { TransactionForm } from '@/components/finance/TransactionForm';
 import { accountRepo } from '@/db/repositories/accountRepository';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
+import { budgetRepo } from '@/db/repositories/budgetRepository';
 import type { Account, Transaction, Category } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { startOfDay, getMonthRange } from '@/utils/date';
@@ -32,6 +33,9 @@ export default function HomePage() {
   const [monthEnd, setMonthEnd] = useState(0);
   const [prevMonthStart, setPrevMonthStart] = useState(0);
   const [prevMonthEnd, setPrevMonthEnd] = useState(0);
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [totalBudgetSpent, setTotalBudgetSpent] = useState(0);
+  const [overspentCategories, setOverspentCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export default function HomePage() {
   }, []);
 
   async function loadData() {
-    const [balance, txs, cats, accs, income, expense, prevInc, prevExp, streakDays] = await Promise.all([
+    const [balance, txs, cats, accs, income, expense, prevInc, prevExp, streakDays, budget, overspent] = await Promise.all([
       accountRepo.getTotalBalance(),
       transactionRepo.getAll({ limit: 10 }),
       categoryRepo.getAll(),
@@ -58,6 +62,8 @@ export default function HomePage() {
       transactionRepo.getTotalByType('income', prevMonthStart, prevMonthEnd),
       transactionRepo.getTotalByType('expense', prevMonthStart, prevMonthEnd),
       computeStreak(),
+      budgetRepo.getTotalBudget(monthStart, monthEnd),
+      budgetRepo.getOverspent(monthStart, monthEnd),
     ]);
     setTotalBalance(balance);
     setRecentTxs(txs);
@@ -68,6 +74,9 @@ export default function HomePage() {
     setPrevIncome(prevInc);
     setPrevExpense(prevExp);
     setStreak(streakDays);
+    setTotalBudget(budget.totalBudget);
+    setTotalBudgetSpent(budget.totalSpent);
+    setOverspentCategories(overspent.map((o) => o.categoryName));
     setLoading(false);
   }
 
@@ -132,14 +141,6 @@ export default function HomePage() {
   const netMonthly = monthlyIncome - monthlyExpense;
   const incomeChange = prevIncome > 0 ? ((monthlyIncome - prevIncome) / prevIncome) * 100 : 0;
   const expenseChange = prevExpense > 0 ? ((monthlyExpense - prevExpense) / prevExpense) * 100 : 0;
-  const budgetCategories = useMemo(() => categories.filter((c) => c.budgetLimit && c.budgetLimit > 0), [categories]);
-  const totalBudget = useMemo(() => budgetCategories.reduce((s, c) => s + (c.budgetLimit ?? 0), 0), [budgetCategories]);
-  const totalBudgetSpent = useMemo(() => {
-    const expenseCats = new Set(budgetCategories.map((c) => c.id));
-    return recentTxs
-      .filter((t) => t.type === 'expense' && expenseCats.has(t.categoryId) && t.date >= monthStart)
-      .reduce((s, t) => s + t.amount, 0);
-  }, [recentTxs, budgetCategories, monthStart]);
   const budgetPercent = totalBudget > 0 ? Math.min((totalBudgetSpent / totalBudget) * 100, 100) : 0;
 
   return (
@@ -214,6 +215,14 @@ export default function HomePage() {
               style={{ width: `${budgetPercent}%` }}
             />
           </div>
+          {overspentCategories.length > 0 && (
+            <div className="mt-2 rounded-lg bg-danger-50 p-3 dark:bg-danger-500/10">
+              <p className="text-xs font-medium text-danger-600 dark:text-danger-400">
+                {overspentCategories.length} kategori melebihi budget:{' '}
+                {overspentCategories.join(', ')}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Transaction, Category, Account } from '@/types';
 import { TransactionItem } from './TransactionItem';
 import { formatDateRelative, formatDate } from '@/utils/format';
@@ -53,10 +54,34 @@ function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
   }));
 }
 
+const GROUP_HEADER_H = 24;
+const TRANSACTION_H = 72;
+
 export function TransactionList({ transactions, categories, accounts, loading, onEdit, onDelete, onRowClick }: TransactionListProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const categoryMap = useMemo(() => getCategoryMap(categories), [categories]);
   const accountMap = useMemo(() => getAccountMap(accounts), [accounts]);
   const groups = useMemo(() => groupByDate(transactions), [transactions]);
+
+  const flatItems = useMemo(() => {
+    const items: Array<{ type: 'header' | 'transaction'; key: string; group?: GroupedTransactions; tx?: Transaction }> = [];
+    for (const g of groups) {
+      items.push({ type: 'header', key: `h-${g.date}`, group: g });
+      for (const tx of g.transactions) {
+        items.push({ type: 'transaction', key: tx.id, tx });
+      }
+    }
+    return items;
+  }, [groups]);
+
+  const totalSize = flatItems.reduce((s, i) => s + (i.type === 'header' ? GROUP_HEADER_H : TRANSACTION_H), 0);
+
+  const virtualizer = useVirtualizer({
+    count: flatItems.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: (i) => flatItems[i]!.type === 'header' ? GROUP_HEADER_H : TRANSACTION_H,
+    overscan: 5,
+  });
 
   if (loading) {
     return (
@@ -76,19 +101,69 @@ export function TransactionList({ transactions, categories, accounts, loading, o
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4 py-2">
-      {groups.map((group) => (
-        <div key={group.date}>
-          <div className="mb-2 px-1">
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
-              {group.label} · {formatDate(group.date, 'dd MMM yyyy')}
-            </h3>
+  if (flatItems.length < 50) {
+    return (
+      <div className="flex flex-col gap-4 py-2">
+        {groups.map((group) => (
+          <div key={group.date}>
+            <div className="mb-2 px-1">
+              <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                {group.label} · {formatDate(group.date, 'dd MMM yyyy')}
+              </h3>
+            </div>
+            <div className="flex flex-col gap-1">
+              {group.transactions.map((tx) => (
+                <TransactionItem
+                  key={tx.id}
+                  transaction={tx}
+                  category={categoryMap[tx.categoryId]}
+                  account={accountMap[tx.accountId]}
+                  toAccount={tx.toAccountId ? accountMap[tx.toAccountId] : undefined}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onRowClick={onRowClick}
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            {group.transactions.map((tx) => (
+        ))}
+      </div>
+    );
+  }
+
+  const items = virtualizer.getVirtualItems();
+  return (
+    <div ref={scrollRef} className="h-full overflow-auto">
+      <div
+        className="relative"
+        style={{ height: totalSize }}
+      >
+        {items.map((vItem) => {
+          const item = flatItems[vItem.index]!;
+          if (item.type === 'header') {
+            const g = item.group!;
+            return (
+              <div
+                key={item.key}
+                className="absolute top-0 left-0 w-full"
+                style={{ height: GROUP_HEADER_H, transform: `translateY(${vItem.start}px)` }}
+              >
+                <div className="px-1 py-1">
+                  <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                    {g.label} · {formatDate(g.date, 'dd MMM yyyy')}
+                  </h3>
+                </div>
+              </div>
+            );
+          }
+          const tx = item.tx!;
+          return (
+            <div
+              key={item.key}
+              className="absolute top-0 left-0 w-full"
+              style={{ height: TRANSACTION_H, transform: `translateY(${vItem.start}px)` }}
+            >
               <TransactionItem
-                key={tx.id}
                 transaction={tx}
                 category={categoryMap[tx.categoryId]}
                 account={accountMap[tx.accountId]}
@@ -97,10 +172,10 @@ export function TransactionList({ transactions, categories, accounts, loading, o
                 onDelete={onDelete}
                 onRowClick={onRowClick}
               />
-            ))}
-          </div>
-        </div>
-      ))}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

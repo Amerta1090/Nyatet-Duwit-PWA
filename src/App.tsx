@@ -11,6 +11,8 @@ const MorePage = lazy(() => import('@/pages/More'));
 const TransactionDetailPage = lazy(() => import('@/pages/Transactions/Detail'));
 const AccountsPage = lazy(() => import('@/pages/More/Accounts'));
 const CategoriesPage = lazy(() => import('@/pages/More/Categories'));
+const BudgetsPage = lazy(() => import('@/pages/More/Budgets'));
+const RecurringPage = lazy(() => import('@/pages/More/Recurring'));
 
 function PageLoader() {
   return (
@@ -55,6 +57,8 @@ function AppContent() {
             <Route path="more" element={<MorePage />} />
             <Route path="more/accounts" element={<AccountsPage />} />
             <Route path="more/categories" element={<CategoriesPage />} />
+            <Route path="more/budgets" element={<BudgetsPage />} />
+            <Route path="more/recurring" element={<RecurringPage />} />
           </Route>
         </Routes>
       </Suspense>

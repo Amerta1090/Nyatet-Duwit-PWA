@@ -18,7 +18,8 @@ export const accountRepo = {
   },
 
   async getPrimary(): Promise<Account | undefined> {
-    return db.accounts.where('isPrimary').equals(1).first();
+    const all = await db.accounts.toArray();
+    return all.find((a) => a.isPrimary);
   },
 
   async create(input: CreateAccountInput): Promise<Account> {
@@ -31,7 +32,11 @@ export const accountRepo = {
     };
 
     if (input.isPrimary) {
-      await db.accounts.where('isPrimary').equals(1).modify({ isPrimary: false });
+      const all = await db.accounts.toArray();
+      const primary = all.find((a) => a.isPrimary);
+      if (primary) {
+        await db.accounts.update(primary.id, { isPrimary: false, updatedAt: now });
+      }
     }
 
     await db.accounts.add(account);
@@ -42,7 +47,11 @@ export const accountRepo = {
     const now = Date.now();
 
     if (data.isPrimary) {
-      await db.accounts.where('isPrimary').equals(1).modify({ isPrimary: false });
+      const all = await db.accounts.toArray();
+      const primary = all.find((a) => a.isPrimary);
+      if (primary) {
+        await db.accounts.update(primary.id, { isPrimary: false, updatedAt: now });
+      }
     }
 
     await db.accounts.update(id, { ...data, updatedAt: now });
