@@ -1,73 +1,102 @@
-# React + TypeScript + Vite
+# NyatetDuwit
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Personal Finance PWA untuk User Indonesia — cepat, private, offline-first.
 
-Currently, two official plugins are available:
+Catat pemasukan & pengeluaran dalam < 3 detik. Semua data tetap di HP kamu.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Fitur
 
-## React Compiler
+- Quick Add Transaction (amount + category, < 3 detik)
+- Manajemen Akun (Cash, Bank, E-Wallet)
+- Manajemen Kategori (12 default + custom)
+- Dashboard, Monthly Overview, Category Breakdown
+- Budget per Kategori
+- Transaksi Berulang
+- Filter & Search
+- Dark Mode
+- Daily Reminder Notification
+- Recording Streak
+- Backup & Restore (JSON export/import)
+- 100% Offline
+- PWA Installable
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+| Stack | Pilihan |
+|---|---|
+| Framework | React 19 + TypeScript 6 |
+| Build Tool | Vite 8 |
+| Styling | Tailwind CSS 4 |
+| Database | Dexie.js 4 (IndexedDB) |
+| State | Zustand 5 |
+| Routing | React Router 7 |
+| PWA | vite-plugin-pwa |
+| Icons | Lucide React |
+| Date | date-fns |
+| Testing | Vitest + Testing Library |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Development
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Install dependencies
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Start dev server
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Type check
+npm run typecheck
+
+# Lint
+npm run lint
+
+# Run tests
+npm run test
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## PWA
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+App di-build sebagai PWA (Progressive Web App) dengan:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Service worker untuk caching app shell
+- Manifest untuk installability
+- Ikon 192px, 512px, maskable
+- Dapat di-install dari browser Android
+
+## APK Build (TWA)
+
+Untuk distribusi APK:
+
+```bash
+# Prerequisites
+npm install -g @googlechrome/bubblewrap
+# or use https://pwabuilder.com
+
+# Init TWA project
+bubblewrap init --manifest https://nyatetduwit.app/manifest.json
+
+# Build signed APK
+bubblewrap build
+
+# Output: app-release-signed.apk
 ```
+
+APK juga bisa di-build otomatis via GitHub Actions saat tag dibuat.
+
+## Landing Page
+
+Landing page tersedia di `/landing.html` untuk distribusi APK.
+
+## Data
+
+Semua data disimpan di IndexedDB lokal. Export ke JSON untuk backup.
+
+## Lisensi
+
+MIT

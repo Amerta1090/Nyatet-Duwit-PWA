@@ -25,8 +25,6 @@ export async function seedDatabase(): Promise<void> {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-  } else {
-    await db.accounts.where('isPrimary').equals(1).first();
   }
 
   const settingsCount = await db.settings.count();

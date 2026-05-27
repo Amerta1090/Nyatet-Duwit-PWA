@@ -36,7 +36,7 @@ export default function BudgetsPage() {
   }, []);
 
   const budgetedCategoryIds = new Set(budgets.map((b) => b.categoryId));
-  const availableCategories = categories.filter((c) => !budgetedCategoryIds.has(c.id!) && !c.isDefault);
+  const availableCategories = categories.filter((c) => !budgetedCategoryIds.has(c.id!));
 
   function openAddForm() {
     setEditBudget(null);

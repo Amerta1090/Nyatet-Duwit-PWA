@@ -3,9 +3,10 @@ import { AppLayout } from '@/components/layout';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { InstallPrompt } from '@/components/pwa';
-import { lazy, Suspense, useState, useCallback } from 'react';
+import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
 import { TransactionForm } from '@/components/finance/TransactionForm';
+import { useAppStore } from '@/stores/appStore';
 import type { Transaction } from '@/types';
 
 const HomePage = lazy(() => import('@/pages/Home'));
@@ -19,6 +20,7 @@ const BudgetsPage = lazy(() => import('@/pages/More/Budgets'));
 const RecurringPage = lazy(() => import('@/pages/More/Recurring'));
 const ReconcilePage = lazy(() => import('@/pages/More/Reconcile'));
 const SettingsPage = lazy(() => import('@/pages/More/Settings'));
+const BackupRestorePage = lazy(() => import('@/pages/More/Backup'));
 
 function PageLoader() {
   return (
@@ -33,6 +35,11 @@ function AppContent() {
   const { ready, error } = useDatabase();
   const [formOpen, setFormOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const darkMode = useAppStore((s) => s.darkMode);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+  }, [darkMode]);
 
   const handleAddTransaction = useCallback(() => {
     setEditTx(null);
@@ -81,6 +88,7 @@ function AppContent() {
             <Route path="more/recurring" element={<RecurringPage />} />
             <Route path="more/reconcile" element={<ReconcilePage />} />
             <Route path="more/settings" element={<SettingsPage />} />
+            <Route path="more/backup" element={<BackupRestorePage />} />
           </Route>
         </Routes>
       </Suspense>

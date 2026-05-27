@@ -17,7 +17,11 @@ export function useDatabase() {
         setReady(true);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        setError(new Error(message));
+        if (err instanceof DOMException && (err.name === 'QuotaExceededError' || err.name === 'QuotaExceeded')) {
+          setError(new Error('Penyimpanan penuh. Hapus data lama atau backup dan hapus data.'));
+        } else {
+          setError(new Error(message));
+        }
       }
     }
     init();

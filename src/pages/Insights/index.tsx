@@ -7,7 +7,7 @@ import { getMonthRange } from '@/utils/date';
 import { BarChart } from '@/components/finance/BarChart';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { getCategoryIcon } from '@/utils/icons';
-import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Minus } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 export default function InsightsPage() {
@@ -262,11 +262,20 @@ export default function InsightsPage() {
                   <div key={t.categoryId} className="flex items-center gap-2">
                     {cat && createElement(getCategoryIcon(cat.icon), { className: 'h-4 w-4', style: { color: cat.color } })}
                     <span className="flex-1 text-xs text-neutral-700 dark:text-neutral-100">{cat?.name ?? 'Tanpa Kategori'}</span>
-                    <span className={cn(
-                      'text-xs font-medium',
-                      Math.abs(change) < 5 ? 'text-neutral-400' : change > 0 ? 'text-danger-500' : 'text-accent-500',
-                    )}>
-                      {Math.abs(change) < 5 ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(0)}%`}
+                    <span className="flex items-center gap-1">
+                      {Math.abs(change) < 5 ? (
+                        <Minus className="h-3 w-3 text-neutral-400" />
+                      ) : change > 0 ? (
+                        <TrendingUp className="h-3 w-3 text-danger-500" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 text-accent-500" />
+                      )}
+                      <span className={cn(
+                        'text-xs font-medium',
+                        Math.abs(change) < 5 ? 'text-neutral-400' : change > 0 ? 'text-danger-500' : 'text-accent-500',
+                      )}>
+                        {Math.abs(change) < 5 ? '—' : `${change > 0 ? '+' : ''}${change.toFixed(0)}%`}
+                      </span>
                     </span>
                   </div>
                 );

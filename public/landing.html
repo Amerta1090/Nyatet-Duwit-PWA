@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E40AF" />
+  <meta name="description" content="Catat keuangan pribadi dengan cepat & private. Offline-first PWA untuk Indonesia." />
+  <meta property="og:title" content="NyatetDuwit - Catat Keuangan Pribadi" />
+  <meta property="og:description" content="Catat pemasukan dan pengeluaran dengan cepat. Bisa dipakai tanpa internet." />
+  <meta property="og:image" content="/icon-512.png" />
+  <title>NyatetDuwit - Catat Keuangan Pribadi</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      padding: 32px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #1E40AF, #3B82F6);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: white;
+      box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      color: #0f172a;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.5;
+      margin-top: -12px;
+    }
+    .benefits {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+    .benefit {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: white;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #334155;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .benefit .icon {
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eff6ff;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .btn-download {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #1E40AF, #1D4ED8);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(30, 64, 175, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-download:active { transform: scale(0.97); }
+    .btn-download small {
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.85;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    .btn-browser {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 24px;
+      background: white;
+      color: #1E40AF;
+      border: 1.5px solid #dbeafe;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-browser:active { background: #eff6ff; }
+    .instructions {
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    .instructions ol {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-left: 20px;
+    }
+    .instructions li {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+    }
+    .instructions li strong { color: #1E40AF; }
+    .warning-box {
+      width: 100%;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #991b1b;
+      line-height: 1.5;
+    }
+    .warning-box strong { color: #dc2626; }
+    .footer {
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: center;
+      padding: 16px 0 32px;
+    }
+    .footer a { color: #1E40AF; text-decoration: none; }
+    .badge {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">💳</div>
+    <h1>NyatetDuwit</h1>
+    <p class="subtitle">Catat keuangan pribadi dengan cepat,<br />private & tanpa internet</p>
+
+    <div class="benefits">
+      <div class="benefit">
+        <div class="icon">⚡</div>
+        <span>Catat transaksi dalam &lt; 3 detik</span>
+      </div>
+      <div class="benefit">
+        <div class="icon">📴</div>
+        <span>Bisa dipakai tanpa internet</span>
+      </div>
+      <div class="benefit">
+        <div class="icon">🔒</div>
+        <span>Data tetap di HP kamu, tidak ada yang lihat</span>
+      </div>
+      <div class="benefit">
+        <div class="icon">💰</div>
+        <span>Gratis, tanpa login, tanpa iklan</span>
+      </div>
+    </div>
+
+    <a href="/nyatetduwit.apk" class="btn-download" id="downloadBtn">
+      📥 Download APK
+      <small>Android 8+ • ~5 MB</small>
+    </a>
+
+    <div class="divider">atau</div>
+
+    <a href="/" class="btn-browser">
+      🌐 Buka di Browser
+    </a>
+
+    <div class="instructions">
+      <h3>Cara Install APK:</h3>
+      <ol>
+        <li>Tap tombol <strong>Download APK</strong> di atas</li>
+        <li>Setelah download selesai, buka file <strong>nyatetduwit.apk</strong></li>
+        <li>Jika muncul peringatan "Install app tidak dikenal":<br />
+          Tap <strong>Settings</strong> → Aktifkan <strong>Allow from this source</strong> → Kembali → <strong>Install</strong></li>
+        <li>Tap <strong>Buka</strong> dan mulai catat keuangan!</li>
+      </ol>
+    </div>
+
+    <div class="warning-box">
+      <strong>⚙️ Peringatan "App Tidak Dikenal"?</strong><br />
+      Ini normal karena APK tidak dari Play Store.<br />
+      Tap <strong>Settings</strong> → aktifkan izin → lanjutkan install.
+    </div>
+
+    <div class="footer">
+      <p>Butuh bantuan? <a href="https://wa.me/6281234567890">Hubungi WhatsApp</a></p>
+      <p style="margin-top:4px">&copy; 2026 NyatetDuwit</p>
+    </div>
+  </div>
+
+  <script>
+    const pkg = {"version":"0.0.0"};
+    fetch('/version.json')
+      .then(r => r.json())
+      .then(v => {
+        const btn = document.getElementById('downloadBtn');
+        btn.innerHTML = `📥 Download APK v${v.version}<small>Android 8+ • ~5 MB</small>`;
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

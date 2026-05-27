@@ -2,6 +2,9 @@
 
 const SW = self as unknown as ServiceWorkerGlobalScope;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+(self as any).__WB_MANIFEST;
+
 SW.addEventListener('message', (event) => {
   if (event.data?.type === 'SCHEDULE_REMINDER') {
     const { hour, minute } = event.data.payload;

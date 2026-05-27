@@ -1,4 +1,4 @@
-import { useState, useRef, createElement } from 'react';
+import { useState, useRef, createElement, memo } from 'react';
 import { ArrowRightLeft, Trash2, Pencil } from 'lucide-react';
 import type { Transaction } from '@/types';
 import { formatCurrency, formatTimeAgo } from '@/utils/format';
@@ -16,7 +16,7 @@ interface TransactionItemProps {
   onRowClick?: (tx: Transaction) => void;
 }
 
-export function TransactionItem({ transaction: tx, category, account, toAccount, onEdit, onDelete, onRowClick }: TransactionItemProps) {
+export const TransactionItem = memo(function TransactionItem({ transaction: tx, category, account, toAccount, onEdit, onDelete, onRowClick }: TransactionItemProps) {
   const [swiping, setSwiping] = useState(false);
   const [offsetX, setOffsetX] = useState(0);
   const startX = useRef(0);
@@ -129,4 +129,4 @@ export function TransactionItem({ transaction: tx, category, account, toAccount,
       </button>
     </div>
   );
-}
+});
