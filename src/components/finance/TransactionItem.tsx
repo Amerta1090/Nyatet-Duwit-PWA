@@ -124,7 +124,7 @@ export const TransactionItem = memo(function TransactionItem({ transaction: tx, 
           <span className={cn('block text-sm font-semibold', amountColor)}>
             {tx.type === 'expense' ? '-' : '+'}{formatCurrency(tx.amount)}
           </span>
-          <span className="text-[10px] text-neutral-400">{formatTimeAgo(tx.date)}</span>
+          <span className="text-[10px] text-neutral-400">{formatTimeAgo(tx.createdAt)}</span>
         </div>
       </button>
     </div>
