@@ -2,6 +2,8 @@
 
 > Personal Finance PWA untuk User Indonesia — cepat, private, offline-first.
 
+🌐 **Live demo:** [https://nyatet-duwit.abdulmajidr708.workers.dev/](https://nyatet-duwit.abdulmajidr708.workers.dev/)
+
 Catat pemasukan & pengeluaran dalam < 3 detik. Semua data tetap di HP kamu.
 
 ## Fitur
@@ -79,7 +81,7 @@ npm install -g @googlechrome/bubblewrap
 # or use https://pwabuilder.com
 
 # Init TWA project
-bubblewrap init --manifest https://nyatetduwit.app/manifest.json
+bubblewrap init --manifest https://nyatet-duwit.abdulmajidr708.workers.dev/manifest.json
 
 # Build signed APK
 bubblewrap build

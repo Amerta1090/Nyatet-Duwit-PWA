@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { db, seedDatabase } from '@/db';
-import { seedDummyData } from '@/db/seed';
 import { recurringRepo } from '@/db/repositories/recurringRepository';
 
 export function useDatabase() {
@@ -12,7 +11,6 @@ export function useDatabase() {
       try {
         await db.open();
         await seedDatabase();
-        await seedDummyData();
         await recurringRepo.generateDue();
         setReady(true);
       } catch (err) {
