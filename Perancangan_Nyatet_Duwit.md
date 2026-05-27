@@ -203,25 +203,6 @@ Setiap "ya" ke satu fitur = "tidak" ke 3 fitur lain. Scope creep adalah pembunuh
 | P9 | **Predictive Insight** | User tidak tahu akhir bulan berapa | "Kira-kira akhir bulan sisa berapa" | Simple projection based on avg | LOW | LOW | MEDIUM | Medium | Statistical projection | **V3. Gimmick risk.** |
 | P10 | **AI Insight** | User mau suggestion | "Kamu bisa hemat 200rb di makan" | Natural language summary | LOW | LOW | MEDIUM | HIGH | LLM integration (costly) | **NO. Not worth it for V1-V3.** |
 
-### TIER 5: FUTURE
-
-> Fitur bagus tapi JANGAN dibuat dulu. Fokus sekarang adalah core.
-
-| # | Fitur | Kenapa Bukan Sekarang | Kapan Pertimbangan |
-|---|---|---|---|
-| F1 | Cloud Sync | Kompleks (conflict resolution), butuh backend, privacy concern | Setelah 10K MAU, ada revenue |
-| F2 | Multi-device | Butuh cloud sync dulu | After cloud sync |
-| F3 | Bank Integration (API) | Bank Indonesia API terbatas, maintenance berat, not reliable | Mungkin tidak pernah worth it |
-| F4 | Shared Finance | Bukan target user (single-user personal) | Jika pivot ke couple/family |
-| F5 | Investment Tracking | Bukan core finance tracking, kompleksitas tinggi | Jika expand scope |
-| F6 | OCR / Scan Struk | Error rate tinggi, maintenance, battery drain | Jika AI vision mature & cheap |
-| F7 | Auto-categorize (ML) | Butuh data banyak, privacy concern, kompleks | Jika punya dataset besar |
-| F8 | Subscription Management | Niche, bisa pakai recurring + tag | Jika user demand tinggi |
-| F9 | Bill Reminder | Bisa pakai recurring + notification | Simple version di V2 |
-| F10 | Multi-currency Full | Niche untuk user Indonesia | Jika ada demand |
-| F11 | Tax Calculation | Bukan target user (personal, bukan bisnis) | Mungkin tidak pernah |
-| F12 | Social Features | Bukan social app, privacy concern | Tidak direkomendasikan |
-
 ---
 
 ## D. UX RECOMMENDATION
