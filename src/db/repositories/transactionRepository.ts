@@ -106,14 +106,18 @@ export const transactionRepo = {
     return this.getByDateRange(from, to);
   },
 
-  async search(query: string): Promise<Transaction[]> {
+  async search(query: string, categories?: { id: string; name: string }[]): Promise<Transaction[]> {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
     const all = await db.transactions.toArray();
+    const categoryIdsByName = categories
+      ? categories.filter((c) => c.name.toLowerCase().includes(q)).map((c) => c.id)
+      : [];
     return all.filter(
       (t) =>
         t.notes?.toLowerCase().includes(q) ||
-        String(t.amount).includes(q),
+        String(t.amount).includes(q) ||
+        categoryIdsByName.includes(t.categoryId),
     );
   },
 
@@ -160,7 +164,16 @@ export const transactionRepo = {
 
       const now = Date.now();
 
-      if (old.type !== 'transfer') {
+      if (old.type === 'transfer') {
+        const srcAccount = await db.accounts.get(old.accountId);
+        if (srcAccount) {
+          await db.accounts.update(old.accountId, { balance: srcAccount.balance + old.amount, updatedAt: now });
+        }
+        const dstAccount = old.toAccountId ? await db.accounts.get(old.toAccountId) : undefined;
+        if (dstAccount) {
+          await db.accounts.update(old.toAccountId!, { balance: dstAccount.balance - old.amount, updatedAt: now });
+        }
+      } else {
         const account = await db.accounts.get(old.accountId);
         if (account) {
           const delta = old.type === 'income' ? -old.amount : old.amount;

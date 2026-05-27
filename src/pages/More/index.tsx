@@ -8,7 +8,7 @@ const menuItems = [
   { icon: ArrowLeftRight, label: 'Transaksi Berulang', path: '/more/recurring', color: 'text-purple-500' },
   { icon: Settings, label: 'Pengaturan', path: '/more/settings', color: 'text-neutral-500', disabled: true },
   { icon: Shield, label: 'Backup & Restore', path: '/more/backup', color: 'text-rose-500', disabled: true },
-  { icon: Database, label: 'Reconcile Saldo', path: '/more/reconcile', color: 'text-cyan-500', disabled: true },
+  { icon: Database, label: 'Reconcile Saldo', path: '/more/reconcile', color: 'text-cyan-500' },
 ];
 
 export default function MorePage() {

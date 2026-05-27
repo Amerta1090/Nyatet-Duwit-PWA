@@ -42,8 +42,7 @@ export function TransactionItem({ transaction: tx, category, account, toAccount,
   function handleTouchMove(e: React.TouchEvent) {
     const diff = startX.current - e.touches[0]!.clientX;
     if (Math.abs(diff) > 5) isDragging.current = true;
-    if (diff < 0) return;
-    setOffsetX(Math.min(diff, 160));
+    setOffsetX(Math.max(Math.min(diff, 160), -160));
     setSwiping(true);
   }
 
@@ -54,6 +53,8 @@ export function TransactionItem({ transaction: tx, category, account, toAccount,
     }
     if (offsetX > 80) {
       onDelete(tx);
+    } else if (offsetX < -80) {
+      onEdit(tx);
     }
     setOffsetX(0);
     setSwiping(false);

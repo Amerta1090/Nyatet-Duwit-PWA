@@ -7,10 +7,11 @@ import { accountRepo } from '@/db/repositories/accountRepository';
 import { TransactionList } from '@/components/finance/TransactionList';
 import { TransactionForm } from '@/components/finance/TransactionForm';
 import { FilterModal } from '@/components/finance/FilterModal';
+import { SearchBar } from '@/components/finance/SearchBar';
 import { useUIStore } from '@/stores/uiStore';
 import { useFilterStore } from '@/stores/filterStore';
 import { startOfDay, getMonthRange } from '@/utils/date';
-import { SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { cn } from '@/utils/cn';
 
@@ -26,6 +27,9 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Transaction[] | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
 
   function buildQueryOptions() {
     let dateFrom = filter.dateFrom;
@@ -90,6 +94,16 @@ export default function TransactionsPage() {
     loadData();
   }, [filter.datePreset, filter.dateFrom, filter.dateTo, filter.type, filter.categoryId, filter.accountId, filter.sortField, filter.sortDir]);
 
+  async function handleSearch(query: string) {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    const results = await transactionRepo.search(query, categories.map((c) => ({ id: c.id, name: c.name })));
+    setSearchResults(results);
+  }
+
   useEffect(() => {
     if (fabSignal > 0) setFormOpen(true);
   }, [fabSignal]);
@@ -135,9 +149,22 @@ export default function TransactionsPage() {
 
   const filterCount = filter.activeFilterCount();
 
+  const displayedTransactions = searchResults ?? transactions;
+
   return (
     <div>
       <div className="flex items-center gap-2 py-2">
+        <button
+          onClick={() => { setShowSearch(!showSearch); setSearchQuery(''); setSearchResults(null); }}
+          className={cn(
+            'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all',
+            showSearch ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-100',
+          )}
+        >
+          <Search className="h-4 w-4" />
+          Cari
+        </button>
+
         <button
           onClick={() => filter.setShowFilterModal(true)}
           className={cn(
@@ -170,11 +197,23 @@ export default function TransactionsPage() {
         </select>
       </div>
 
+      {showSearch && (
+        <div className="mb-3">
+          <SearchBar onSearch={handleSearch} />
+          {searchQuery && searchResults && searchResults.length === 0 && (
+            <p className="mt-2 text-center text-sm text-neutral-400">Tidak ditemukan</p>
+          )}
+          {searchQuery && searchResults && searchResults.length > 0 && (
+            <p className="mt-1 text-xs text-neutral-400">{searchResults.length} hasil untuk "{searchQuery}"</p>
+          )}
+        </div>
+      )}
+
       <TransactionList
-        transactions={transactions}
+        transactions={displayedTransactions}
         categories={categories}
         accounts={accounts}
-        loading={loading}
+        loading={loading && !searchQuery}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onRowClick={handleRowClick}

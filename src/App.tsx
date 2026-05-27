@@ -13,6 +13,7 @@ const AccountsPage = lazy(() => import('@/pages/More/Accounts'));
 const CategoriesPage = lazy(() => import('@/pages/More/Categories'));
 const BudgetsPage = lazy(() => import('@/pages/More/Budgets'));
 const RecurringPage = lazy(() => import('@/pages/More/Recurring'));
+const ReconcilePage = lazy(() => import('@/pages/More/Reconcile'));
 
 function PageLoader() {
   return (
@@ -59,6 +60,7 @@ function AppContent() {
             <Route path="more/categories" element={<CategoriesPage />} />
             <Route path="more/budgets" element={<BudgetsPage />} />
             <Route path="more/recurring" element={<RecurringPage />} />
+            <Route path="more/reconcile" element={<ReconcilePage />} />
           </Route>
         </Routes>
       </Suspense>
