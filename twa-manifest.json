@@ -16,8 +16,8 @@
     "path": "./android.keystore",
     "alias": "nyatetduwit"
   },
-  "appVersionName": "1.0",
-  "appVersionCode": 1,
+  "appVersionName": "1.5",
+  "appVersionCode": 2,
   "fallbackType": "customtabs",
   "enableSiteSettingsShortcut": true
 }
