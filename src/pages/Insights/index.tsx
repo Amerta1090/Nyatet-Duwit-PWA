@@ -1,16 +1,19 @@
 import { useEffect, useState, useMemo, createElement } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import type { Transaction, Category } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { getMonthRange } from '@/utils/date';
 import { BarChart } from '@/components/finance/BarChart';
+import { PieChart } from '@/components/finance/PieChart';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { getCategoryIcon } from '@/utils/icons';
-import { TrendingUp, TrendingDown, BarChart3, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, PieChart as PieChartIcon, Minus, ChevronRight } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 export default function InsightsPage() {
+  const navigate = useNavigate();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -20,6 +23,7 @@ export default function InsightsPage() {
   const [prevIncome, setPrevIncome] = useState(0);
   const [prevExpense, setPrevExpense] = useState(0);
   const [trendData, setTrendData] = useState<{ categoryId: string; current: number; prev: number }[]>([]);
+  const [chartMode, setChartMode] = useState<'bar' | 'pie'>('bar');
 
   const range = useMemo(() => {
     const d = new Date(year, month, 1);
@@ -157,7 +161,7 @@ export default function InsightsPage() {
           <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-100">{monthLabel}</h2>
           <button onClick={goToNextMonth} className="rounded-lg px-3 py-1.5 text-sm text-primary-500 hover:bg-neutral-100 dark:hover:bg-neutral-700">▶</button>
         </div>
-        <EmptyState icon={<BarChart3 className="h-12 w-12" />} title="Belum ada data" description="Mulai catat transaksi untuk melihat analisis keuangan" />
+        <EmptyState icon={<BarChart3 className="h-12 w-12" />} title="Butuh minimal 7 hari data" description={`Data terkumpul: 0 hari — catat transaksi setiap hari untuk melihat insight keuangan`} />
       </div>
     );
   }
@@ -210,15 +214,36 @@ export default function InsightsPage() {
 
       {expenseByCategory.length > 0 && (
         <div>
-          <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-100">Pengeluaran per Kategori</h3>
-          <BarChart
-            items={expenseByCategory.map((e) => ({
-              label: e.category?.name ?? 'Tanpa Kategori',
-              value: e.total,
-              color: e.category?.color ?? '#64748B',
-              icon: e.category ? createElement(getCategoryIcon(e.category.icon), { className: 'h-3.5 w-3.5', style: { color: e.category.color } }) : undefined,
-            }))}
-          />
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-100">Pengeluaran per Kategori</h3>
+            <button
+              onClick={() => setChartMode((m) => m === 'bar' ? 'pie' : 'bar')}
+              className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-medium text-neutral-600 transition-all hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300"
+            >
+              {chartMode === 'bar' ? <PieChartIcon className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}
+              {chartMode === 'bar' ? 'Pie Chart' : 'Bar Chart'}
+            </button>
+          </div>
+          {chartMode === 'bar' ? (
+            <BarChart
+              items={expenseByCategory.map((e) => ({
+                label: e.category?.name ?? 'Tanpa Kategori',
+                value: e.total,
+                color: e.category?.color ?? '#64748B',
+                icon: e.category ? createElement(getCategoryIcon(e.category.icon), { className: 'h-3.5 w-3.5', style: { color: e.category.color } }) : undefined,
+              }))}
+            />
+          ) : (
+            <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-neutral-800">
+              <PieChart
+                items={expenseByCategory.map((e) => ({
+                  label: e.category?.name ?? 'Tanpa Kategori',
+                  value: e.total,
+                  color: e.category?.color ?? '#64748B',
+                }))}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -283,6 +308,14 @@ export default function InsightsPage() {
           </div>
         </div>
       )}
+
+      <button
+        onClick={() => navigate('/insights/review')}
+        className="flex w-full items-center justify-between rounded-xl bg-primary-50 p-4 dark:bg-primary-500/10"
+      >
+        <span className="text-sm font-medium text-primary-600">Review Bulanan</span>
+        <ChevronRight className="h-4 w-4 text-primary-500" />
+      </button>
     </div>
   );
 }

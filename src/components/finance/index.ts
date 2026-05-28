@@ -6,3 +6,4 @@ export { SearchBar } from './SearchBar';
 export { FilterModal } from './FilterModal';
 export { ColorPicker } from './ColorPicker';
 export { IconPicker } from './IconPicker';
+export { PieChart } from './PieChart';

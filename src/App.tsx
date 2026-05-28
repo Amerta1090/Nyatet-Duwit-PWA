@@ -1,17 +1,20 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useDeepLink } from '@/hooks/useDeepLink';
+import { useWeeklySummary } from '@/hooks/useWeeklySummary';
 import { InstallPrompt } from '@/components/pwa';
 import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
 import { TransactionForm } from '@/components/finance/TransactionForm';
 import { useAppStore } from '@/stores/appStore';
+import { db } from '@/db/schema';
 import type { Transaction } from '@/types';
 
 const HomePage = lazy(() => import('@/pages/Home'));
 const TransactionsPage = lazy(() => import('@/pages/Transactions'));
 const InsightsPage = lazy(() => import('@/pages/Insights'));
+const InsightsReviewPage = lazy(() => import('@/pages/Insights/Review'));
 const MorePage = lazy(() => import('@/pages/More'));
 const TransactionDetailPage = lazy(() => import('@/pages/Transactions/Detail'));
 const AccountsPage = lazy(() => import('@/pages/More/Accounts'));
@@ -21,6 +24,8 @@ const RecurringPage = lazy(() => import('@/pages/More/Recurring'));
 const ReconcilePage = lazy(() => import('@/pages/More/Reconcile'));
 const SettingsPage = lazy(() => import('@/pages/More/Settings'));
 const BackupRestorePage = lazy(() => import('@/pages/More/Backup'));
+const ExportPage = lazy(() => import('@/pages/More/Export'));
+const OnboardingPage = lazy(() => import('@/pages/Onboarding'));
 
 function PageLoader() {
   return (
@@ -36,10 +41,17 @@ function AppContent() {
   const [formOpen, setFormOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const darkMode = useAppStore((s) => s.darkMode);
+  const { scheduleWeeklySummary } = useWeeklySummary();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
+
+  useEffect(() => {
+    if (ready) {
+      scheduleWeeklySummary();
+    }
+  }, [ready, scheduleWeeklySummary]);
 
   const handleAddTransaction = useCallback(() => {
     setEditTx(null);
@@ -50,6 +62,28 @@ function AppContent() {
     setFormOpen(false);
     setEditTx(null);
   }, []);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (ready) {
+      db.settings.get('onboarding_completed').then((s) => {
+        const completed = s?.value === 'true';
+        useAppStore.getState().setOnboardingCompleted(completed);
+        if (!completed && window.location.pathname !== '/onboarding') {
+          navigate('/onboarding', { replace: true });
+        }
+      });
+      db.settings.get('show_decimals').then((s) => {
+        useAppStore.getState().setShowDecimals(s?.value === 'true');
+      });
+      db.settings.get('language').then((s) => {
+        if (s && (s.value === 'id' || s.value === 'en')) {
+          useAppStore.getState().setLanguage(s.value);
+        }
+      });
+    }
+  }, [ready, navigate]);
 
   useDeepLink({ onAddTransaction: handleAddTransaction });
 
@@ -76,11 +110,13 @@ function AppContent() {
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<AppLayout />}>
             <Route index element={<HomePage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="transactions/:id" element={<TransactionDetailPage />} />
             <Route path="insights" element={<InsightsPage />} />
+            <Route path="insights/review" element={<InsightsReviewPage />} />
             <Route path="more" element={<MorePage />} />
             <Route path="more/accounts" element={<AccountsPage />} />
             <Route path="more/categories" element={<CategoriesPage />} />
@@ -89,6 +125,7 @@ function AppContent() {
             <Route path="more/reconcile" element={<ReconcilePage />} />
             <Route path="more/settings" element={<SettingsPage />} />
             <Route path="more/backup" element={<BackupRestorePage />} />
+            <Route path="more/export" element={<ExportPage />} />
           </Route>
         </Routes>
       </Suspense>

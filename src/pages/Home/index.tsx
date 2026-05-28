@@ -5,6 +5,8 @@ import { accountRepo } from '@/db/repositories/accountRepository';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { budgetRepo } from '@/db/repositories/budgetRepository';
+import { WeeklySummaryCard } from '@/components/finance/WeeklySummaryCard';
+import { YouSavedHighlight } from '@/components/finance/YouSavedHighlight';
 import type { Account, Transaction, Category } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { startOfDay, getMonthRange } from '@/utils/date';
@@ -199,6 +201,18 @@ export default function HomePage() {
         </div>
       )}
 
+      {!loading && (monthlyIncome > 0 || monthlyExpense > 0) && (
+        <YouSavedHighlight
+          currentIncome={monthlyIncome}
+          currentExpense={monthlyExpense}
+          prevIncome={prevIncome}
+          prevExpense={prevExpense}
+          minimal
+        />
+      )}
+
+      {!loading && <WeeklySummaryCard />}
+
       {!loading && totalBudget > 0 && (
         <div>
           <div className="mb-2 flex items-center justify-between">
@@ -241,8 +255,8 @@ export default function HomePage() {
         ) : recentTxs.length === 0 ? (
           <EmptyState
             icon={<ArrowLeftRight className="h-10 w-10" />}
-            title="Belum ada transaksi"
-            description="Tap + untuk mencatat transaksi pertama"
+            title="Mulai catat pengeluaran pertama kamu"
+            description="Tap tombol + di bawah untuk mencatat transaksi. Cuma butuh 3 detik!"
           />
         ) : (
           <div className="flex flex-col gap-1">

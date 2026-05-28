@@ -14,4 +14,6 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   currency: 'IDR',
   reminder_time: '20:00',
   first_transaction_done: 'false',
+  weekly_summary_enabled: 'true',
+  onboarding_completed: 'false',
 };

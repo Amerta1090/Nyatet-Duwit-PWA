@@ -10,6 +10,7 @@ const pageTitles: Record<string, string> = {
   '/transactions': 'Transaksi',
   '/transactions/': 'Detail Transaksi',
   '/insights': 'Analisis',
+  '/insights/review': 'Review Bulanan',
   '/more': 'Lainnya',
   '/more/accounts': 'Akun',
   '/more/categories': 'Kategori',

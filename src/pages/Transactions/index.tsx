@@ -201,7 +201,9 @@ export default function TransactionsPage() {
         <div className="mb-3">
           <SearchBar onSearch={handleSearch} />
           {searchQuery && searchResults && searchResults.length === 0 && (
-            <p className="mt-2 text-center text-sm text-neutral-400">Tidak ditemukan</p>
+            <p className="mt-2 text-center text-sm text-neutral-400">
+              Tidak ditemukan untuk "{searchQuery}"
+            </p>
           )}
           {searchQuery && searchResults && searchResults.length > 0 && (
             <p className="mt-1 text-xs text-neutral-400">{searchResults.length} hasil untuk "{searchQuery}"</p>

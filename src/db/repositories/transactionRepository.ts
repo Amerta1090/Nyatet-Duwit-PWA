@@ -223,4 +223,107 @@ export const transactionRepo = {
       total,
     }));
   },
+
+  async getWeeklySummary(dateFrom: number, dateTo: number): Promise<{
+    totalExpense: number;
+    totalIncome: number;
+    topCategories: { categoryId: string; total: number }[];
+    transactionCount: number;
+  }> {
+    const txs = await this.getByDateRange(dateFrom, dateTo);
+    const totalExpense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const totalIncome = txs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+
+    const catMap = new Map<string, number>();
+    for (const tx of txs) {
+      if (tx.type === 'expense') {
+        catMap.set(tx.categoryId, (catMap.get(tx.categoryId) ?? 0) + tx.amount);
+      }
+    }
+    const topCategories = Array.from(catMap.entries())
+      .map(([categoryId, total]) => ({ categoryId, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 3);
+
+    return { totalExpense, totalIncome, topCategories, transactionCount: txs.length };
+  },
+
+  async getMonthlyComparison(year: number, month: number): Promise<{
+    income: number;
+    expense: number;
+    prevIncome: number;
+    prevExpense: number;
+    transactionCount: number;
+    dailyAvg: number;
+    highestDay: { date: number; amount: number };
+    streakDays: number;
+  }> {
+    const range = (() => {
+      const start = new Date(year, month, 1).getTime();
+      const end = new Date(year, month + 1, 0, 23, 59, 59).getTime();
+      return { start, end };
+    })();
+
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const prevRange = (() => {
+      const start = new Date(prevYear, prevMonth, 1).getTime();
+      const end = new Date(prevYear, prevMonth + 1, 0, 23, 59, 59).getTime();
+      return { start, end };
+    })();
+
+    const [txs, prevTxs] = await Promise.all([
+      this.getByDateRange(range.start, range.end),
+      this.getByDateRange(prevRange.start, prevRange.end),
+    ]);
+
+    const income = txs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const prevIncome = prevTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const prevExpense = prevTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dailyAvg = daysInMonth > 0 ? expense / daysInMonth : 0;
+
+    const dayMap = new Map<number, number>();
+    for (const tx of txs) {
+      if (tx.type === 'expense') {
+        dayMap.set(tx.date, (dayMap.get(tx.date) ?? 0) + tx.amount);
+      }
+    }
+    let highestDay = { date: 0, amount: 0 };
+    for (const [date, amount] of dayMap) {
+      if (amount > highestDay.amount) highestDay = { date, amount };
+    }
+
+    const allTxs30 = await db.transactions
+      .where('date')
+      .above(Date.now() - 30 * 86400000)
+      .toArray();
+    const activeDays = new Set<number>();
+    for (const tx of allTxs30) {
+      activeDays.add(tx.date);
+    }
+    const sortedDays = Array.from(activeDays).sort((a, b) => b - a);
+    let streakDays = 0;
+    if (sortedDays.length > 0) {
+      const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+      const yesterday = today - 86400000;
+      if (sortedDays[0]! >= yesterday) {
+        for (let i = 0; i < sortedDays.length; i++) {
+          const expected = today - i * 86400000;
+          if (sortedDays[i] === expected) streakDays++;
+          else break;
+        }
+      }
+    }
+
+    return {
+      income, expense, prevIncome, prevExpense,
+      transactionCount: txs.length,
+      dailyAvg: Math.round(dailyAvg),
+      highestDay,
+      streakDays,
+    };
+  },
 };

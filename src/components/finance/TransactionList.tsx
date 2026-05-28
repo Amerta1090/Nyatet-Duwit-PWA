@@ -96,7 +96,7 @@ export function TransactionList({ transactions, categories, accounts, loading, o
       <EmptyState
         icon={<ArrowLeftRight className="h-12 w-12" />}
         title="Belum ada transaksi"
-        description="Mulai catat pengeluaran atau pemasukan pertama kamu"
+        description="Tap + untuk mencatat transaksi pertama kamu"
       />
     );
   }

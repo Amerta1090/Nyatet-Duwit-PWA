@@ -34,6 +34,11 @@ export async function seedDatabase(): Promise<void> {
       value,
     }));
     await db.settings.bulkAdd(settings);
+  } else {
+    const existing = await db.settings.get('onboarding_completed');
+    if (!existing) {
+      await db.settings.put({ key: 'onboarding_completed', value: 'true' });
+    }
   }
 }
 

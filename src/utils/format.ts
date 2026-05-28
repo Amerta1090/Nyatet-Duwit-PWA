@@ -1,10 +1,18 @@
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 
-export function formatCurrency(amount: number): string {
-  const formatted = Math.abs(amount)
-    .toLocaleString('id-ID')
-    .replace(/,/g, '.');
+let _showDecimals = false;
+
+export function setShowDecimals(v: boolean) {
+  _showDecimals = v;
+}
+
+export function formatCurrency(amount: number, showDecimals?: boolean): string {
+  const dec = showDecimals ?? _showDecimals;
+  const formatted = Math.abs(amount).toLocaleString('id-ID', {
+    minimumFractionDigits: dec ? 0 : 0,
+    maximumFractionDigits: dec ? 2 : 0,
+  });
 
   return `Rp ${formatted}`;
 }
