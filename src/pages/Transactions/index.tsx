@@ -12,7 +12,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useFilterStore } from '@/stores/filterStore';
 import { startOfDay, getMonthRange } from '@/utils/date';
 import { SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { Badge, Modal } from '@/components/ui';
 import { cn } from '@/utils/cn';
 
 export default function TransactionsPage() {
@@ -30,6 +30,7 @@ export default function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Transaction[] | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [confirmDeleteTx, setConfirmDeleteTx] = useState<Transaction | null>(null);
 
   function buildQueryOptions() {
     let dateFrom = filter.dateFrom;
@@ -78,11 +79,18 @@ export default function TransactionsPage() {
     ]);
 
     const sorted = [...txs];
-    if (filter.sortField === 'amount') {
-      sorted.sort((a, b) => filter.sortDir === 'desc' ? b.amount - a.amount : a.amount - b.amount);
-    } else {
-      sorted.sort((a, b) => filter.sortDir === 'desc' ? b.date - a.date : a.date - b.date);
-    }
+    sorted.sort((a, b) => {
+      let cmp: number;
+      if (filter.sortField === 'amount') {
+        cmp = filter.sortDir === 'desc' ? b.amount - a.amount : a.amount - b.amount;
+      } else {
+        cmp = filter.sortDir === 'desc' ? b.date - a.date : a.date - b.date;
+      }
+      if (cmp !== 0) return cmp;
+      const aOrder = a.sortOrder ?? a.createdAt;
+      const bOrder = b.sortOrder ?? b.createdAt;
+      return bOrder - aOrder;
+    });
 
     setTransactions(sorted);
     setCategories(cats);
@@ -114,7 +122,14 @@ export default function TransactionsPage() {
     }
   }, [doubleTapSignal]);
 
-  async function handleDelete(tx: Transaction) {
+  function requestDelete(tx: Transaction) {
+    setConfirmDeleteTx(tx);
+  }
+
+  async function confirmDelete() {
+    const tx = confirmDeleteTx;
+    if (!tx) return;
+    setConfirmDeleteTx(null);
     await transactionRepo.delete(tx.id);
     showToast('Transaksi dihapus', 'info', async () => {
       await transactionRepo.create({
@@ -130,6 +145,10 @@ export default function TransactionsPage() {
       loadData();
     });
     loadData();
+  }
+
+  function cancelDelete() {
+    setConfirmDeleteTx(null);
   }
 
   function handleEdit(tx: Transaction) {
@@ -217,7 +236,7 @@ export default function TransactionsPage() {
         accounts={accounts}
         loading={loading && !searchQuery}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={requestDelete}
         onRowClick={handleRowClick}
       />
 
@@ -236,6 +255,40 @@ export default function TransactionsPage() {
       />
 
       <FilterModal />
+
+      <Modal open={confirmDeleteTx !== null} onClose={cancelDelete} title="Hapus Transaksi">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          Yakin ingin menghapus transaksi ini? Tindakan ini dapat dibatalkan nanti.
+        </p>
+        {confirmDeleteTx && (
+          <div className="mt-3 rounded-lg bg-neutral-50 p-3 dark:bg-neutral-800">
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                'text-sm font-semibold',
+                confirmDeleteTx.type === 'income' ? 'text-accent-500' :
+                confirmDeleteTx.type === 'expense' ? 'text-danger-500' : 'text-primary-500',
+              )}>
+                {confirmDeleteTx.type === 'expense' ? '-' : '+'}{formatCurrency(confirmDeleteTx.amount)}
+              </span>
+              <span className="text-xs text-neutral-400">{confirmDeleteTx.notes || ''}</span>
+            </div>
+          </div>
+        )}
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={cancelDelete}
+            className="flex-1 rounded-xl border border-neutral-200 py-2.5 text-sm font-medium text-neutral-700 dark:border-neutral-600 dark:text-neutral-300"
+          >
+            Batal
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="flex-1 rounded-xl bg-danger-500 py-2.5 text-sm font-medium text-white"
+          >
+            Hapus
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

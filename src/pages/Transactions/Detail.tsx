@@ -8,7 +8,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { getCategoryIcon } from '@/utils/icons';
 import { ArrowLeft, Trash2, Pencil } from 'lucide-react';
-import { Skeleton } from '@/components/ui';
+import { Skeleton, Modal } from '@/components/ui';
 import { cn } from '@/utils/cn';
 import { createElement } from 'react';
 import type { Transaction, Category, Account } from '@/types';
@@ -24,6 +24,7 @@ export default function TransactionDetailPage() {
   const [toAccount, setToAccount] = useState<Account | undefined>();
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -42,8 +43,13 @@ export default function TransactionDetailPage() {
     });
   }, [id]);
 
-  async function handleDelete() {
+  function requestDelete() {
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
     if (!tx) return;
+    setShowDeleteConfirm(false);
     await transactionRepo.delete(tx.id);
     showToast('Transaksi dihapus', 'info');
     navigate('/transactions');
@@ -153,7 +159,7 @@ export default function TransactionDetailPage() {
           Edit Transaksi
         </button>
         <button
-          onClick={handleDelete}
+          onClick={requestDelete}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-danger-200 text-base font-semibold text-danger-500 dark:border-danger-500/30"
         >
           <Trash2 className="h-4 w-4" />
@@ -174,6 +180,26 @@ export default function TransactionDetailPage() {
           notes: tx.notes,
         }}
       />
+
+      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Hapus Transaksi">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          Yakin ingin menghapus transaksi ini?
+        </p>
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={() => setShowDeleteConfirm(false)}
+            className="flex-1 rounded-xl border border-neutral-200 py-2.5 text-sm font-medium text-neutral-700 dark:border-neutral-600 dark:text-neutral-300"
+          >
+            Batal
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="flex-1 rounded-xl bg-danger-500 py-2.5 text-sm font-medium text-white"
+          >
+            Hapus
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

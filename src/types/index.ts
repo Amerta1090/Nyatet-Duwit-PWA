@@ -24,6 +24,7 @@ export interface Transaction {
   tags?: string[];
   isRecurring?: boolean;
   recurringId?: string;
+  sortOrder?: number;
   createdAt: number;
   updatedAt: number;
   synced: boolean;

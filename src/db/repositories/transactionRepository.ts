@@ -30,6 +30,7 @@ export const transactionRepo = {
         id: generateId(),
         ...input,
         isRecurring: false,
+        sortOrder: now,
         createdAt: now,
         updatedAt: now,
         synced: false,
