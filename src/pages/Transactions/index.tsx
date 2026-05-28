@@ -13,6 +13,7 @@ import { useFilterStore } from '@/stores/filterStore';
 import { startOfDay, getMonthRange } from '@/utils/date';
 import { SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
 import { Badge, Modal } from '@/components/ui';
+import { formatCurrency } from '@/utils/format';
 import { cn } from '@/utils/cn';
 
 export default function TransactionsPage() {
