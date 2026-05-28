@@ -22,7 +22,7 @@ plugins {
 
 def twaManifest = [
     applicationId: 'com.nyatetduwit.app',
-    hostName: 'https://nyatet-duwit.abdulmajidr708.workers.dev', // The domain being opened in the TWA.
+    hostName: 'nyatet-duwit.abdulmajidr708.workers.dev', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'NyatetDuwit', // The application name.
     launcherName: 'NyatetDuwit', // The name shown on the Android Launcher.

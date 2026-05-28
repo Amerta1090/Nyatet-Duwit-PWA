@@ -1,6 +1,6 @@
 {
   "packageId": "com.nyatetduwit.app",
-  "host": "https://nyatet-duwit.abdulmajidr708.workers.dev",
+  "host": "nyatet-duwit.abdulmajidr708.workers.dev",
   "name": "NyatetDuwit",
   "launcherName": "NyatetDuwit",
   "display": "standalone",
