@@ -38,6 +38,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
   const [date, setDate] = useState(() => startOfDay(Date.now()));
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmInsufficient, setConfirmInsufficient] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
@@ -60,6 +61,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
     && (type !== 'transfer' || toAccountId !== null);
 
   const transferInsufficient = type === 'transfer' && sourceAccount && Number(amount) > sourceAccount.balance && !editId;
+  const expenseInsufficient = type === 'expense' && sourceAccount && Number(amount) > sourceAccount.balance && !editId;
 
   const initializeForm = useCallback(() => {
     if (prefill) {
@@ -99,6 +101,17 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
   async function handleSave() {
     if (!isValid || saving) return;
 
+    // Konfirmasi jika saldo tidak mencukupi untuk pengeluaran
+    if (expenseInsufficient) {
+      setConfirmInsufficient(true);
+      return;
+    }
+
+    await saveTransaction();
+  }
+
+  async function saveTransaction() {
+    if (!isValid || saving) return;
     setSaving(true);
     try {
       if (editId) {
@@ -156,6 +169,40 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
 
   return (
     <BottomSheet open={open} onClose={onClose} title={editId ? 'Edit Transaksi' : 'Transaksi Baru'}>
+      {confirmInsufficient ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 dark:bg-amber-500/10">
+            <span className="mt-0.5 text-lg">⚠️</span>
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                Saldo {sourceAccount?.name} tidak mencukupi
+              </p>
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                Saldo tersedia: {formatCurrency(sourceAccount?.balance ?? 0)}<br />
+                Pengeluaran: {formatCurrency(Number(amount) || 0)}<br />
+                Sisa setelah transaksi: {formatCurrency((sourceAccount?.balance ?? 0) - (Number(amount) || 0))}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmInsufficient(false)}
+              className="flex-1 rounded-xl bg-neutral-100 py-2.5 text-sm font-medium text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              Batal
+            </button>
+            <button
+              onClick={async () => {
+                setConfirmInsufficient(false);
+                await saveTransaction();
+              }}
+              className="flex-1 rounded-xl bg-amber-500 py-2.5 text-sm font-medium text-white"
+            >
+              Tetap Lanjutkan
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-col gap-4">
         <div className="flex rounded-lg bg-neutral-100 p-1 dark:bg-neutral-700">
           {(['expense', 'income', 'transfer'] as const).map((t) => (
@@ -305,7 +352,8 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
         >
           {saving ? 'Menyimpan...' : editId ? 'Simpan Perubahan' : 'Simpan'}
         </button>
-      </div>
+        </div>
+      )}
     </BottomSheet>
   );
 }

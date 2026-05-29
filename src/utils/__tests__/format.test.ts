@@ -15,7 +15,7 @@ describe('formatCurrency', () => {
   });
 
   it('handles negative values', () => {
-    expect(formatCurrency(-25000)).toBe('Rp 25.000');
+    expect(formatCurrency(-25000)).toBe('-Rp 25.000');
   });
 });
 

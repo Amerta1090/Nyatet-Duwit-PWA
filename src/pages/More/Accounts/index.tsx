@@ -7,7 +7,7 @@ import { formatCurrency } from '@/utils/format';
 import { useUIStore } from '@/stores/uiStore';
 import {
   Wallet, Plus, Pencil, Trash2, Archive, Star,
-  ArrowLeft,
+  ArrowLeft, RefreshCw,
 } from 'lucide-react';
 import { Skeleton, BottomSheet } from '@/components/ui';
 import { cn } from '@/utils/cn';
@@ -37,12 +37,29 @@ export default function AccountsPage() {
   const [editAccount, setEditAccount] = useState<Account | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Account | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResults, setReconcileResults] = useState<{ accountId: string; name: string; expected: number; actual: number; diff: number }[] | null>(null);
 
   async function loadAccounts() {
     setLoading(true);
     const accs = await accountRepo.getAll();
     setAccounts(accs);
     setLoading(false);
+  }
+
+  async function handleReconcile() {
+    setReconciling(true);
+    const results = await accountRepo.reconcileAll();
+    setReconcileResults(results);
+    const fixed = results.filter((r) => r.diff !== 0 && r.actual < r.expected);
+    if (fixed.length > 0) {
+      showToast(
+        `${fixed.length} akun diperbaiki: ${fixed.map((r) => `${r.name} (${formatCurrency(r.diff)})`).join(', ')}`,
+        'info',
+      );
+    }
+    loadAccounts();
+    setReconciling(false);
   }
 
   useEffect(() => { loadAccounts(); }, []);
@@ -70,13 +87,23 @@ export default function AccountsPage() {
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-100">
           Daftar Akun ({accounts.length})
         </h3>
-        <button
-          onClick={() => { setEditAccount(null); setFormOpen(true); }}
-          className="flex items-center gap-1 rounded-full bg-primary-600 px-4 py-1.5 text-sm font-medium text-white"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleReconcile}
+            disabled={reconciling}
+            className="flex items-center gap-1 rounded-full border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-500 transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-700"
+          >
+            <RefreshCw className={`h-4 w-4 ${reconciling ? 'animate-spin' : ''}`} />
+            Crosscheck
+          </button>
+          <button
+            onClick={() => { setEditAccount(null); setFormOpen(true); }}
+            className="flex items-center gap-1 rounded-full bg-primary-600 px-4 py-1.5 text-sm font-medium text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -234,6 +261,55 @@ export default function AccountsPage() {
           </div>
         </div>
       )}
+
+      <BottomSheet
+        open={!!reconcileResults}
+        onClose={() => setReconcileResults(null)}
+        title="Hasil Crosscheck"
+      >
+        <div className="flex flex-col gap-3">
+          {reconcileResults?.map((r) => {
+            const ok = r.diff === 0;
+            const fixed = r.actual < r.expected;
+            return (
+              <div
+                key={r.accountId}
+                className={cn(
+                  'rounded-xl p-3',
+                  ok ? 'bg-emerald-50 dark:bg-emerald-500/10' : fixed ? 'bg-amber-50 dark:bg-amber-500/10' : 'bg-blue-50 dark:bg-blue-500/10',
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{r.name}</span>
+                  <span className={cn('text-xs font-medium', ok ? 'text-emerald-600' : fixed ? 'text-amber-600' : 'text-blue-600')}>
+                    {ok ? '✓ Sesuai' : fixed ? '✓ Diperbaiki' : 'Selisih (saldo awal?)'}
+                  </span>
+                </div>
+                <div className="mt-1 grid grid-cols-3 gap-2 text-xs text-neutral-500">
+                  <div>
+                    <span className="block text-neutral-400">Transaksi</span>
+                    {formatCurrency(r.expected)}
+                  </div>
+                  <div>
+                    <span className="block text-neutral-400">Tersimpan</span>
+                    {formatCurrency(r.actual)}
+                  </div>
+                  <div>
+                    <span className="block text-neutral-400">Selisih</span>
+                    {r.diff >= 0 ? `+${formatCurrency(r.diff)}` : formatCurrency(r.diff)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <button
+            onClick={() => setReconcileResults(null)}
+            className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-primary-600 text-sm font-semibold text-white"
+          >
+            Tutup
+          </button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
@@ -247,7 +323,7 @@ interface AccountFormProps {
 
 function AccountForm({ open, onClose, editAccount, onSaved }: AccountFormProps) {
   const [name, setName] = useState('');
-  const [type, setType] = useState<'cash' | 'bank' | 'ewallet' | 'savings'>('cash');
+  const [type, setType] = useState<Account['type']>('cash');
   const [icon, setIcon] = useState('wallet');
   const [color, setColor] = useState(ACCOUNT_COLORS[0]!);
   const [initialBalance, setInitialBalance] = useState('');

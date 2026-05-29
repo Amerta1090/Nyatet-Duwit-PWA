@@ -18,19 +18,28 @@ function GoalIcon({ name, className, style }: { name: string; className?: string
 
 export function GoalSummaryWidget() {
   const navigate = useNavigate();
-  const [topGoals, setTopGoals] = useState<Goal[]>([]);
+  const [topGoals, setTopGoals] = useState<(Goal & { currentAmount: number; percent: number; color: string })[]>([]);
   const [totalProgress, setTotalProgress] = useState({ totalTarget: 0, totalCurrent: 0, totalPercent: 0, goalCount: 0 });
   const [nearestDeadline, setNearestDeadline] = useState<Goal | null>(null);
 
   async function load() {
-    const [top, total, nearest] = await Promise.all([
-      goalRepo.getTopGoals(3),
+    const [total, nearest] = await Promise.all([
       goalRepo.getTotalProgress(),
       goalRepo.getNearestDeadline(),
     ]);
-    setTopGoals(top);
     setTotalProgress(total);
     setNearestDeadline(nearest);
+
+    const top = await goalRepo.getTopGoals(3);
+    const topWithData = await Promise.all(
+      top.map(async (g) => ({
+        ...g,
+        currentAmount: await goalRepo.getCurrentAmount(g),
+        percent: await goalRepo.getProgressPercent(g),
+        color: await goalRepo.getProgressColor(g),
+      })),
+    );
+    setTopGoals(topWithData);
   }
 
   useEffect(() => {
@@ -74,36 +83,32 @@ export function GoalSummaryWidget() {
       )}
 
       <div className="flex flex-col gap-2">
-        {topGoals.map((g) => {
-          const percent = goalRepo.getProgressPercent(g);
-          const color = goalRepo.getProgressColor(g);
-          return (
-            <button
-              key={g.id}
-              onClick={() => navigate('/more/goals')}
-              className="flex items-center gap-3 rounded-xl bg-white p-3 text-left transition-all hover:bg-neutral-50 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+        {topGoals.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => navigate('/more/goals')}
+            className="flex items-center gap-3 rounded-xl bg-white p-3 text-left transition-all hover:bg-neutral-50 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+          >
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ backgroundColor: `${g.color}20` }}
             >
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${g.color}20` }}
-              >
-                <GoalIcon name={g.icon} className="h-4 w-4" style={{ color: g.color }} />
+              <GoalIcon name={g.icon} className="h-4 w-4" style={{ color: g.color }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{g.name}</p>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-700">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${g.percent}%`, backgroundColor: g.color }}
+                />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{g.name}</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-700">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${percent}%`, backgroundColor: color }}
-                  />
-                </div>
-              </div>
-              <span className="text-xs font-semibold" style={{ color }}>
-                {percent}%
-              </span>
-            </button>
-          );
-        })}
+            </div>
+            <span className="text-xs font-semibold" style={{ color: g.color }}>
+              {g.percent}%
+            </span>
+          </button>
+        ))}
       </div>
 
       {nearestDeadline && (

@@ -10,7 +10,9 @@ export const accountRepo = {
     if (activeOnly) {
       accounts = accounts.filter((a) => !a.isArchived);
     }
-    return accounts.sort((a) => (a.isPrimary ? -1 : 0));
+    return accounts
+      .filter((a) => a.type !== 'goal')
+      .sort((a) => (a.isPrimary ? -1 : 0));
   },
 
   async getById(id: string): Promise<Account | undefined> {
@@ -40,6 +42,23 @@ export const accountRepo = {
     }
 
     await db.accounts.add(account);
+
+    // Catat saldo awal sebagai transaksi income agar selalu konsisten
+    if (account.balance > 0) {
+      await db.transactions.add({
+        id: generateId(),
+        type: 'income',
+        amount: account.balance,
+        categoryId: 'cat-other-income',
+        accountId: account.id,
+        date: now,
+        notes: 'Saldo awal',
+        createdAt: now,
+        updatedAt: now,
+        synced: false,
+      });
+    }
+
     return account;
   },
 
@@ -98,6 +117,7 @@ export const accountRepo = {
         const actual = account.balance;
         const diff = actual - expected;
         results.push({ accountId: account.id, name: account.name, expected, actual, diff });
+        // Selalu reset balance sesuai hitungan transaksi
         if (diff !== 0) {
           await db.accounts.update(account.id, { balance: expected, updatedAt: Date.now() });
         }

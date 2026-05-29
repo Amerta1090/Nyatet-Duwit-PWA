@@ -9,12 +9,13 @@ export function setShowDecimals(v: boolean) {
 
 export function formatCurrency(amount: number, showDecimals?: boolean): string {
   const dec = showDecimals ?? _showDecimals;
+  const prefix = amount < 0 ? '-Rp ' : 'Rp ';
   const formatted = Math.abs(amount).toLocaleString('id-ID', {
     minimumFractionDigits: dec ? 0 : 0,
     maximumFractionDigits: dec ? 2 : 0,
   });
 
-  return `Rp ${formatted}`;
+  return `${prefix}${formatted}`;
 }
 
 export function formatDate(timestamp: number, formatStr: string = 'dd MMM yyyy'): string {

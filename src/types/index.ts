@@ -1,7 +1,7 @@
 export interface Account {
   id: string;
   name: string;
-  type: 'cash' | 'bank' | 'ewallet' | 'savings';
+  type: 'cash' | 'bank' | 'ewallet' | 'savings' | 'goal';
   balance: number;
   currency: string;
   icon: string;
@@ -63,10 +63,11 @@ export interface Goal {
   id: string;
   name: string;
   targetAmount: number;
-  currentAmount: number;
+  accountId?: string;
   icon: string;
   color: string;
   deadline?: number;
+  achievedAt?: number;
   createdAt: number;
   updatedAt: number;
 }
