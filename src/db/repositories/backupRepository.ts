@@ -7,18 +7,20 @@ export interface BackupData {
   transactions: import('@/types').Transaction[];
   categories: import('@/types').Category[];
   recurring: import('@/types').RecurringTransaction[];
+  goals: import('@/types').Goal[];
   settings: import('@/types').AppSettings[];
 }
 
-const CURRENT_VERSION = '1.0';
+const CURRENT_VERSION = '1.1';
 
 export const backupRepo = {
   async exportData(): Promise<BackupData> {
-    const [accounts, transactions, categories, recurring, settings] = await Promise.all([
+    const [accounts, transactions, categories, recurring, goals, settings] = await Promise.all([
       db.accounts.toArray(),
       db.transactions.toArray(),
       db.categories.toArray(),
       db.recurring.toArray(),
+      db.goals.toArray(),
       db.settings.toArray(),
     ]);
 
@@ -29,6 +31,7 @@ export const backupRepo = {
       transactions,
       categories,
       recurring,
+      goals,
       settings,
     };
   },
@@ -52,12 +55,13 @@ export const backupRepo = {
     }
 
     try {
-      await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.settings], async () => {
+      await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.goals, db.settings], async () => {
         await Promise.all([
           db.accounts.clear(),
           db.transactions.clear(),
           db.categories.clear(),
           db.recurring.clear(),
+          db.goals.clear(),
           db.settings.clear(),
         ]);
 
@@ -65,6 +69,7 @@ export const backupRepo = {
         if (parsed.transactions!.length > 0) await db.transactions.bulkAdd(parsed.transactions!);
         if (parsed.categories && parsed.categories.length > 0) await db.categories.bulkAdd(parsed.categories!);
         if (parsed.recurring && parsed.recurring.length > 0) await db.recurring.bulkAdd(parsed.recurring!);
+        if (parsed.goals && parsed.goals.length > 0) await db.goals.bulkAdd(parsed.goals!);
         if (parsed.settings && parsed.settings.length > 0) await db.settings.bulkAdd(parsed.settings!);
       });
 
@@ -76,12 +81,13 @@ export const backupRepo = {
   },
 
   async clearAllData(): Promise<void> {
-    await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.settings], async () => {
+    await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.goals, db.settings], async () => {
       await Promise.all([
         db.accounts.clear(),
         db.transactions.clear(),
         db.categories.clear(),
         db.recurring.clear(),
+        db.goals.clear(),
         db.settings.clear(),
       ]);
     });

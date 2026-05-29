@@ -25,6 +25,7 @@ const ReconcilePage = lazy(() => import('@/pages/More/Reconcile'));
 const SettingsPage = lazy(() => import('@/pages/More/Settings'));
 const BackupRestorePage = lazy(() => import('@/pages/More/Backup'));
 const ExportPage = lazy(() => import('@/pages/More/Export'));
+const GoalsPage = lazy(() => import('@/pages/More/Goals'));
 const OnboardingPage = lazy(() => import('@/pages/Onboarding'));
 
 function PageLoader() {
@@ -125,6 +126,7 @@ function AppContent() {
             <Route path="more/reconcile" element={<ReconcilePage />} />
             <Route path="more/settings" element={<SettingsPage />} />
             <Route path="more/backup" element={<BackupRestorePage />} />
+            <Route path="more/goals" element={<GoalsPage />} />
             <Route path="more/export" element={<ExportPage />} />
           </Route>
         </Routes>

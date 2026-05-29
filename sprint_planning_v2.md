@@ -77,7 +77,7 @@ User bisa membuat goals (liburan, gadget, darurat), track progress, dan lihat es
 **Priority:** P0
 **Story Points:** 13
 **Assignee:** Developer
-**Status:** To Do
+**Status:** Done
 
 **Deskripsi:**
 Sistem goal tracking. User bisa bikin goal dengan target nominal, deadline optional, dan icon.
@@ -164,7 +164,7 @@ List view:
 **Priority:** P1
 **Story Points:** 5
 **Assignee:** Developer
-**Status:** To Do
+**Status:** Done
 
 **Deskripsi:**
 Tampilkan progress goals di dashboard. Ringkasan cepat tanpa perlu buka halaman Goals.
@@ -198,7 +198,7 @@ Tampilkan progress goals di dashboard. Ringkasan cepat tanpa perlu buka halaman 
 **Priority:** P2
 **Story Points:** 5
 **Assignee:** Developer
-**Status:** To Do
+**Status:** Done
 
 **Deskripsi:**
 Saat goal mencapai milestone (25%, 50%, 75%, 100%), tampilkan celebration toast.
@@ -230,12 +230,12 @@ Saat goal mencapai milestone (25%, 50%, 75%, 100%), tampilkan celebration toast.
 
 ### Sprint 1 Deliverables Checklist
 
-- [ ] Savings Goal CRUD (US-V2-1)
-- [ ] Goal dashboard widget (US-V2-2)
-- [ ] Goal milestone celebration (US-V2-3)
-- [ ] All tests pass
-- [ ] Goal progress accurate
-- [ ] Dashboard widget updates correctly
+- [x] Savings Goal CRUD (US-V2-1)
+- [x] Goal dashboard widget (US-V2-2)
+- [x] Goal milestone celebration (US-V2-3)
+- [x] All tests pass
+- [x] Goal progress accurate
+- [x] Dashboard widget updates correctly
 
 ---
 

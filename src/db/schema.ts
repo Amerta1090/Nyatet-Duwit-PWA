@@ -1,11 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import type { Account, Transaction, Category, RecurringTransaction, AppSettings } from '@/types';
+import type { Account, Transaction, Category, RecurringTransaction, Goal, AppSettings } from '@/types';
 
 export class NyatetDuwitDB extends Dexie {
   accounts!: Table<Account, string>;
   transactions!: Table<Transaction, string>;
   categories!: Table<Category, string>;
   recurring!: Table<RecurringTransaction, string>;
+  goals!: Table<Goal, string>;
   settings!: Table<AppSettings, string>;
 
   constructor() {
@@ -22,6 +23,14 @@ export class NyatetDuwitDB extends Dexie {
       transactions: 'id, type, categoryId, accountId, date, isRecurring, synced',
       categories: 'id, type, isDefault, order',
       recurring: 'id, frequency, isActive, lastGenerated',
+      settings: 'key',
+    });
+    this.version(3).stores({
+      accounts: 'id, isPrimary, isArchived',
+      transactions: 'id, type, categoryId, accountId, date, isRecurring, synced',
+      categories: 'id, type, isDefault, order',
+      recurring: 'id, frequency, isActive, lastGenerated',
+      goals: 'id',
       settings: 'key',
     });
   }

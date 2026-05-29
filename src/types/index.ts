@@ -59,6 +59,18 @@ export interface RecurringTransaction {
   lastGenerated?: number;
 }
 
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  icon: string;
+  color: string;
+  deadline?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface AppSettings {
   key: string;
   value: string;

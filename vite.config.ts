@@ -17,13 +17,6 @@ export default defineConfig({
       strategies: 'injectManifest',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts', expiration: { maxEntries: 10, maxAgeSeconds: 86400 * 30 } },
-          },
-        ],
       },
       manifest: {
         name: 'NyatetDuwit',

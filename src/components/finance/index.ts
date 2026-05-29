@@ -7,3 +7,7 @@ export { FilterModal } from './FilterModal';
 export { ColorPicker } from './ColorPicker';
 export { IconPicker } from './IconPicker';
 export { PieChart } from './PieChart';
+export { GoalCard } from './GoalCard';
+export { GoalForm } from './GoalForm';
+export { GoalProgressForm } from './GoalProgressForm';
+export { GoalSummaryWidget } from './GoalSummaryWidget';

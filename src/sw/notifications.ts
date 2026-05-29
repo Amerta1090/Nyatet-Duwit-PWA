@@ -1,9 +1,87 @@
 /// <reference lib="webworker" />
 
 const SW = self as unknown as ServiceWorkerGlobalScope;
+const CACHE_NAME = 'nyatetduwit-v1';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-(self as any).__WB_MANIFEST;
+type ManifestEntry = { url: string; revision: string | null };
+
+SW.addEventListener('install', (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const manifest: ManifestEntry[] = (self as any).__WB_MANIFEST || [];
+      await cache.addAll(manifest.map((entry) => entry.url));
+    })(),
+  );
+  SW.skipWaiting();
+});
+
+SW.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name)),
+      );
+      await SW.clients.claim();
+    })(),
+  );
+});
+
+SW.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // Google Fonts: cache-first with dedicated cache
+  if (
+    url.hostname === 'fonts.googleapis.com' ||
+    url.hostname === 'fonts.gstatic.com'
+  ) {
+    event.respondWith(cacheFirst(request, 'google-fonts'));
+    return;
+  }
+
+  // Same-origin (app shell, JS, CSS, images): cache-first
+  if (url.origin === self.location.origin) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // Cross-origin non-font: network-first
+  event.respondWith(networkFirst(request));
+});
+
+async function cacheFirst(request: Request, cacheName?: string) {
+  const cache = await caches.open(cacheName || CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+async function networkFirst(request: Request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    return cached || new Response('Offline', { status: 503 });
+  }
+}
 
 SW.addEventListener('message', (event) => {
   if (event.data?.type === 'SCHEDULE_REMINDER') {
