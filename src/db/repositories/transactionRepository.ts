@@ -61,7 +61,7 @@ export const transactionRepo = {
 
   async getAll(options?: GetAllOptions): Promise<Transaction[]> {
     let collection = db.transactions
-      .orderBy('[date+sortOrder]')
+      .orderBy('date')
       .reverse()
       .filter(() => true);
 
@@ -86,19 +86,35 @@ export const transactionRepo = {
       collection = collection.filter((t) => t.date <= to);
     }
 
+    const results = await collection.toArray();
+
+    results.sort((a, b) => {
+      const dc = b.date - a.date;
+      if (dc !== 0) return dc;
+      return (b.sortOrder ?? b.createdAt) - (a.sortOrder ?? a.createdAt);
+    });
+
     if (options?.limit) {
-      return collection.limit(options.limit).toArray();
+      return results.slice(0, options.limit);
     }
 
-    return collection.toArray();
+    return results;
   },
 
   async getByDateRange(from: number, to: number): Promise<Transaction[]> {
-    return db.transactions
-      .where('[date+sortOrder]')
-      .between([from, 0], [to, Number.MAX_SAFE_INTEGER], true, true)
+    const txs = await db.transactions
+      .where('date')
+      .between(from, to, true, true)
       .reverse()
       .toArray();
+
+    txs.sort((a, b) => {
+      const dc = b.date - a.date;
+      if (dc !== 0) return dc;
+      return (b.sortOrder ?? b.createdAt) - (a.sortOrder ?? a.createdAt);
+    });
+
+    return txs;
   },
 
   async getByMonth(year: number, month: number): Promise<Transaction[]> {

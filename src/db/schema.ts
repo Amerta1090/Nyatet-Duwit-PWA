@@ -24,13 +24,6 @@ export class NyatetDuwitDB extends Dexie {
       recurring: 'id, frequency, isActive, lastGenerated',
       settings: 'key',
     });
-    this.version(3).stores({
-      accounts: 'id, isPrimary, isArchived',
-      transactions: 'id, type, categoryId, accountId, [date+sortOrder], date, isRecurring, synced',
-      categories: 'id, type, isDefault, order',
-      recurring: 'id, frequency, isActive, lastGenerated',
-      settings: 'key',
-    });
   }
 }
 
