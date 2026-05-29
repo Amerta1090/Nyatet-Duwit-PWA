@@ -61,7 +61,7 @@ export const transactionRepo = {
 
   async getAll(options?: GetAllOptions): Promise<Transaction[]> {
     let collection = db.transactions
-      .orderBy('date')
+      .orderBy('[date+sortOrder]')
       .reverse()
       .filter(() => true);
 
@@ -95,8 +95,8 @@ export const transactionRepo = {
 
   async getByDateRange(from: number, to: number): Promise<Transaction[]> {
     return db.transactions
-      .where('date')
-      .between(from, to, true, true)
+      .where('[date+sortOrder]')
+      .between([from, 0], [to, Number.MAX_SAFE_INTEGER], true, true)
       .reverse()
       .toArray();
   },

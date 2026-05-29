@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 let _showDecimals = false;
@@ -32,5 +32,5 @@ export function formatDateRelative(timestamp: number): string {
 }
 
 export function formatTimeAgo(timestamp: number): string {
-  return formatDistanceToNow(timestamp, { addSuffix: true, locale: id });
+  return format(timestamp, 'HH:mm', { locale: id });
 }
