@@ -45,9 +45,9 @@ SW.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin (app shell, JS, CSS, images): cache-first
+  // Same-origin (app shell, JS, CSS, images): network-first
   if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(networkFirst(request));
     return;
   }
 
