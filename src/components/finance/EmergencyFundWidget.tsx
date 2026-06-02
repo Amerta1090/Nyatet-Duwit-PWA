@@ -24,7 +24,25 @@ export function EmergencyFundWidget() {
     load();
   }, []);
 
-  if (!ready || target === 0) return null;
+  if (!ready) return null;
+
+  if (target === 0) {
+    return (
+      <button
+        onClick={() => navigate('/more/emergency-fund')}
+        className="flex w-full items-center gap-3 rounded-xl bg-white px-4 py-3 text-left shadow-sm transition-all hover:bg-neutral-50 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+      >
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-50 dark:bg-neutral-700">
+          <ShieldAlert className="h-4 w-4 text-neutral-400" />
+        </div>
+        <div className="flex-1 text-left">
+          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Dana Darurat</p>
+          <p className="text-xs text-neutral-400">Atur target dana darurat</p>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-neutral-300" />
+      </button>
+    );
+  }
 
   const isMedium = percent >= 50 && percent < 75;
   const isHigh = percent >= 75 && percent < 100;
