@@ -10,3 +10,6 @@ export { PieChart } from './PieChart';
 export { GoalCard } from './GoalCard';
 export { GoalForm } from './GoalForm';
 export { GoalSummaryWidget } from './GoalSummaryWidget';
+export { DebtForm } from './DebtForm';
+export { DebtSummaryWidget } from './DebtSummaryWidget';
+export { EmergencyFundWidget } from './EmergencyFundWidget';

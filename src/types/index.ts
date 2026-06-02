@@ -72,6 +72,18 @@ export interface Goal {
   updatedAt: number;
 }
 
+export interface Debt {
+  id: string;
+  type: 'owed' | 'owing';
+  personName: string;
+  amount: number;
+  paidAmount: number;
+  dueDate?: number;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface AppSettings {
   key: string;
   value: string;

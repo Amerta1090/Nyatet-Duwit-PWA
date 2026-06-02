@@ -26,6 +26,8 @@ const SettingsPage = lazy(() => import('@/pages/More/Settings'));
 const BackupRestorePage = lazy(() => import('@/pages/More/Backup'));
 const ExportPage = lazy(() => import('@/pages/More/Export'));
 const GoalsPage = lazy(() => import('@/pages/More/Goals'));
+const EmergencyFundPage = lazy(() => import('@/pages/More/EmergencyFund'));
+const DebtPage = lazy(() => import('@/pages/More/Debt'));
 const OnboardingPage = lazy(() => import('@/pages/Onboarding'));
 
 function PageLoader() {
@@ -127,6 +129,8 @@ function AppContent() {
             <Route path="more/settings" element={<SettingsPage />} />
             <Route path="more/backup" element={<BackupRestorePage />} />
             <Route path="more/goals" element={<GoalsPage />} />
+            <Route path="more/emergency-fund" element={<EmergencyFundPage />} />
+            <Route path="more/debt" element={<DebtPage />} />
             <Route path="more/export" element={<ExportPage />} />
           </Route>
         </Routes>

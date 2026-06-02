@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { TransactionForm, GoalSummaryWidget } from '@/components/finance';
+import { TransactionForm, GoalSummaryWidget, EmergencyFundWidget, DebtSummaryWidget } from '@/components/finance';
 import { accountRepo } from '@/db/repositories/accountRepository';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
@@ -214,6 +214,10 @@ export default function HomePage() {
       {!loading && <WeeklySummaryCard />}
 
       {!loading && <GoalSummaryWidget />}
+
+      {!loading && <EmergencyFundWidget />}
+
+      {!loading && <DebtSummaryWidget />}
 
       {!loading && totalBudget > 0 && (
         <div>
