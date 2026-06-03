@@ -36,6 +36,10 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
   const [accountId, setAccountId] = useState<string | null>(null);
   const [toAccountId, setToAccountId] = useState<string | null>(null);
   const [date, setDate] = useState(() => startOfDay(Date.now()));
+  const [time, setTime] = useState(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmInsufficient, setConfirmInsufficient] = useState(false);
@@ -70,6 +74,10 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
       setCategoryId(prefill.categoryId ?? null);
       setAccountId(prefill.accountId ?? null);
       setDate(prefill.date ?? startOfDay(Date.now()));
+      setTime(() => {
+        const d = new Date(prefill.date ?? Date.now());
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      });
       setNotes(prefill.notes ?? '');
     } else {
       setType(lastTransactionType);
@@ -77,6 +85,10 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
       setCategoryId(lastUsedCategoryId);
       setAccountId(lastUsedAccountId);
       setDate(startOfDay(Date.now()));
+      setTime(() => {
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      });
       setNotes('');
       setToAccountId(null);
     }
@@ -110,9 +122,17 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
     await saveTransaction();
   }
 
+  function combineDateAndTime(dateTs: number, timeStr: string): number {
+    const d = new Date(dateTs);
+    const [h, m] = timeStr.split(':').map(Number);
+    d.setHours(h ?? 0, m ?? 0, 0, 0);
+    return d.getTime();
+  }
+
   async function saveTransaction() {
     if (!isValid || saving) return;
     setSaving(true);
+    const fullDate = combineDateAndTime(date, time);
     try {
       if (editId) {
         await transactionRepo.update(editId, {
@@ -121,7 +141,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           categoryId: categoryId!,
           accountId: accountId!,
           toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
-          date,
+          date: fullDate,
           notes: notes || undefined,
         });
 
@@ -136,7 +156,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           categoryId: categoryId!,
           accountId: accountId!,
           toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
-          date,
+          date: fullDate,
           notes: notes || undefined,
         });
 
@@ -162,7 +182,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
   }
 
   function changeDate(delta: number) {
-    const d = new Date(date);
+    const d = new Date(combineDateAndTime(date, time));
     d.setDate(d.getDate() + delta);
     setDate(startOfDay(d.getTime()));
   }
@@ -305,7 +325,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
         </div>
 
         <div>
-          <label className="mb-1 text-xs font-medium text-neutral-500">Tanggal</label>
+          <label className="mb-1 text-xs font-medium text-neutral-500">Tanggal & Waktu</label>
           <div className="flex items-center gap-2">
             <button
               onClick={() => changeDate(-1)}
@@ -321,6 +341,12 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
               Besok →
             </button>
           </div>
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="mt-2 h-10 w-full rounded-lg border border-neutral-100 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-100"
+          />
         </div>
 
         <div>

@@ -125,7 +125,7 @@ export default function TransactionDetailPage() {
         <div className="flex justify-between">
           <span className="text-sm text-neutral-500">Tanggal</span>
           <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
-            {formatDate(tx.date, 'dd MMM yyyy')}
+            {formatDate(tx.date, 'dd MMM yyyy HH:mm')}
           </span>
         </div>
         <div className="flex justify-between">
