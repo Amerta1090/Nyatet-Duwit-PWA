@@ -1,4 +1,4 @@
-import { useState, useRef, createElement, memo } from 'react';
+import { useState, useRef, useMemo, createElement, memo } from 'react';
 import { ArrowRightLeft, Trash2, Pencil } from 'lucide-react';
 import type { Transaction } from '@/types';
 import { formatCurrency, formatTimeAgo } from '@/utils/format';
@@ -33,6 +33,13 @@ export const TransactionItem = memo(function TransactionItem({ transaction: tx, 
       : 'text-primary-500';
 
   const typeLabel = tx.type === 'income' ? 'Pemasukan' : tx.type === 'expense' ? 'Pengeluaran' : 'Transfer';
+
+  const hasTime = useMemo(() => {
+    const d = new Date(tx.date);
+    return d.getHours() !== 0 || d.getMinutes() !== 0;
+  }, [tx.date]);
+
+  const displayTime = hasTime ? formatTimeAgo(tx.date) : formatTimeAgo(tx.createdAt);
 
   function handleTouchStart(e: React.TouchEvent) {
     startX.current = e.touches[0]!.clientX;
@@ -124,7 +131,7 @@ export const TransactionItem = memo(function TransactionItem({ transaction: tx, 
           <span className={cn('block text-sm font-semibold', amountColor)}>
             {tx.type === 'expense' ? '-' : '+'}{formatCurrency(tx.amount)}
           </span>
-          <span className="text-[10px] text-neutral-400">{formatTimeAgo(tx.date)}</span>
+          <span className="text-[10px] text-neutral-400">{displayTime}</span>
         </div>
       </button>
     </div>

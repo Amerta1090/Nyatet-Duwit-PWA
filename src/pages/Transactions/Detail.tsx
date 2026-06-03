@@ -86,6 +86,12 @@ export default function TransactionDetailPage() {
 
   const typeLabel = tx.type === 'income' ? 'Pemasukan' : tx.type === 'expense' ? 'Pengeluaran' : 'Transfer';
 
+  const hasTime = (() => {
+    const d = new Date(tx.date);
+    return d.getHours() !== 0 || d.getMinutes() !== 0;
+  })();
+  const dateFormat = hasTime ? 'dd MMM yyyy HH:mm' : 'dd MMM yyyy';
+
   return (
     <div className="py-6">
       <button
@@ -125,7 +131,7 @@ export default function TransactionDetailPage() {
         <div className="flex justify-between">
           <span className="text-sm text-neutral-500">Tanggal</span>
           <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
-            {formatDate(tx.date, 'dd MMM yyyy HH:mm')}
+            {formatDate(tx.date, dateFormat)}
           </span>
         </div>
         <div className="flex justify-between">
