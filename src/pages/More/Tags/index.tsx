@@ -6,8 +6,6 @@ import { useUIStore } from '@/stores/uiStore';
 import { Tag as TagIcon, Pencil, Trash2, Plus } from 'lucide-react';
 import type { Tag } from '@/types';
 
-const TAG_COLORS: Record<string, string> = {};
-
 export default function TagsPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
