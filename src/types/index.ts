@@ -84,6 +84,13 @@ export interface Debt {
   updatedAt: number;
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: number;
+}
+
 export interface AppSettings {
   key: string;
   value: string;

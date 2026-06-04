@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import type { Transaction, Category, Account } from '@/types';
+import type { Transaction, Category, Account, Tag } from '@/types';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { accountRepo } from '@/db/repositories/accountRepository';
+import { tagRepo } from '@/db/repositories/tagRepository';
 import { TransactionList } from '@/components/finance/TransactionList';
 import { TransactionForm } from '@/components/finance/TransactionForm';
 import { FilterModal } from '@/components/finance/FilterModal';
@@ -25,6 +26,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
@@ -66,6 +68,7 @@ export default function TransactionsPage() {
       type: filter.type !== 'all' ? filter.type : undefined,
       categoryId: filter.categoryId,
       accountId: filter.accountId,
+      tagIds: filter.tagIds.length > 0 ? filter.tagIds : undefined,
       limit: 200,
     };
   }
@@ -73,10 +76,11 @@ export default function TransactionsPage() {
   async function loadData() {
     setLoading(true);
     const opts = buildQueryOptions();
-    const [txs, cats, accs] = await Promise.all([
+    const [txs, cats, accs, tagList] = await Promise.all([
       transactionRepo.getAll(opts),
       categoryRepo.getAll(),
       accountRepo.getAll(true),
+      tagRepo.getAll(),
     ]);
 
     const sorted = [...txs];
@@ -96,12 +100,13 @@ export default function TransactionsPage() {
     setTransactions(sorted);
     setCategories(cats);
     setAccounts(accs);
+    setTags(tagList);
     setLoading(false);
   }
 
   useEffect(() => {
     loadData();
-  }, [filter.datePreset, filter.dateFrom, filter.dateTo, filter.type, filter.categoryId, filter.accountId, filter.sortField, filter.sortDir]);
+  }, [filter.datePreset, filter.dateFrom, filter.dateTo, filter.type, filter.categoryId, filter.accountId, filter.tagIds, filter.sortField, filter.sortDir]);
 
   async function handleSearch(query: string) {
     setSearchQuery(query);
@@ -235,6 +240,7 @@ export default function TransactionsPage() {
         transactions={displayedTransactions}
         categories={categories}
         accounts={accounts}
+        tags={tags}
         loading={loading && !searchQuery}
         onEdit={handleEdit}
         onDelete={requestDelete}
@@ -252,6 +258,7 @@ export default function TransactionsPage() {
           accountId: editTx.accountId,
           date: editTx.date,
           notes: editTx.notes,
+          tags: editTx.tags,
         } : undefined}
       />
 

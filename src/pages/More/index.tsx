@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Tags, Landmark, ArrowLeftRight, Settings, Shield, Database, FileDown, ChevronRight, Heart, ExternalLink, Target, ShieldAlert, HandCoins } from 'lucide-react';
+import { Wallet, Tags, Landmark, ArrowLeftRight, Settings, Shield, Database, FileDown, ChevronRight, Heart, ExternalLink, Target, ShieldAlert, HandCoins, Hash } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 
 const SAWERIA_URL = 'http://saweria.co/abdulmajidr708';
@@ -12,6 +12,7 @@ const menuItems = [
   { icon: Target, label: 'Goals', path: '/more/goals', color: 'text-rose-500' },
   { icon: ShieldAlert, label: 'Dana Darurat', path: '/more/emergency-fund', color: 'text-blue-500' },
   { icon: HandCoins, label: 'Utang & Piutang', path: '/more/debt', color: 'text-purple-500' },
+  { icon: Hash, label: 'Tag', path: '/more/tags', color: 'text-indigo-500' },
   { icon: ArrowLeftRight, label: 'Transaksi Berulang', path: '/more/recurring', color: 'text-purple-500' },
   { icon: FileDown, label: 'Export Data', path: '/more/export', color: 'text-emerald-500' },
   { icon: Settings, label: 'Pengaturan', path: '/more/settings', color: 'text-neutral-500' },

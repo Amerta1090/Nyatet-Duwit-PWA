@@ -10,6 +10,7 @@ export interface CreateTransactionInput {
   toAccountId?: string;
   date: number;
   notes?: string;
+  tags?: string[];
 }
 
 export interface GetAllOptions {
@@ -20,6 +21,7 @@ export interface GetAllOptions {
   accountId?: string;
   dateFrom?: number;
   dateTo?: number;
+  tagIds?: string[];
 }
 
 export const transactionRepo = {
@@ -84,6 +86,10 @@ export const transactionRepo = {
     if (options?.dateTo !== undefined) {
       const to = options.dateTo;
       collection = collection.filter((t) => t.date <= to);
+    }
+    if (options?.tagIds && options.tagIds.length > 0) {
+      const ids = options.tagIds;
+      collection = collection.filter((t) => ids.every((id) => t.tags?.includes(id)));
     }
 
     const results = await collection.toArray();

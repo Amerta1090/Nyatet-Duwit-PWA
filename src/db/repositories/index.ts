@@ -4,3 +4,4 @@ export { categoryRepo } from './categoryRepository';
 export { goalRepo } from './goalRepository';
 export { debtRepo } from './debtRepository';
 export { emergencyFundRepo } from './emergencyFundRepository';
+export { tagRepo } from './tagRepository';

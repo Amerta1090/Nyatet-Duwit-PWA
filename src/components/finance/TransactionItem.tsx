@@ -1,22 +1,28 @@
 import { useState, useRef, useMemo, createElement, memo } from 'react';
 import { ArrowRightLeft, Trash2, Pencil } from 'lucide-react';
-import type { Transaction } from '@/types';
+import type { Transaction, Category, Account } from '@/types';
 import { formatCurrency, formatTimeAgo } from '@/utils/format';
 import { getCategoryIcon } from '@/utils/icons';
 import { cn } from '@/utils/cn';
-import type { Category, Account } from '@/types';
+
+interface TagDisplay {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface TransactionItemProps {
   transaction: Transaction;
   category?: Category;
   account?: Account;
   toAccount?: Account;
+  tags?: TagDisplay[];
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
   onRowClick?: (tx: Transaction) => void;
 }
 
-export const TransactionItem = memo(function TransactionItem({ transaction: tx, category, account, toAccount, onEdit, onDelete, onRowClick }: TransactionItemProps) {
+export const TransactionItem = memo(function TransactionItem({ transaction: tx, category, account, toAccount, tags, onEdit, onDelete, onRowClick }: TransactionItemProps) {
   const [swiping, setSwiping] = useState(false);
   const [offsetX, setOffsetX] = useState(0);
   const startX = useRef(0);
@@ -123,6 +129,19 @@ export const TransactionItem = memo(function TransactionItem({ transaction: tx, 
                 <ArrowRightLeft className="h-3 w-3" />
                 {toAccount.name}
               </span>
+            )}
+            {tags && tags.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {tags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-block rounded-full px-1.5 py-0.5 text-[9px] font-medium text-white"
+                    style={{ backgroundColor: tag.color }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         </div>

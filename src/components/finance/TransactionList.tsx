@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { Transaction, Category, Account } from '@/types';
+import type { Transaction, Category, Account, Tag } from '@/types';
 import { TransactionItem } from './TransactionItem';
 import { formatDateRelative, formatDate } from '@/utils/format';
 import { EmptyState, Skeleton } from '@/components/ui';
@@ -16,6 +16,7 @@ interface TransactionListProps {
   transactions: Transaction[];
   categories: Category[];
   accounts: Account[];
+  tags?: Tag[];
   loading?: boolean;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
@@ -32,6 +33,20 @@ function getAccountMap(accounts: Account[]): Record<string, Account> {
   const map: Record<string, Account> = {};
   for (const a of accounts) map[a.id] = a;
   return map;
+}
+
+function getTagMap(tags: Tag[]): Record<string, Tag> {
+  const map: Record<string, Tag> = {};
+  for (const t of tags) map[t.id] = t;
+  return map;
+}
+
+function getTagsForTx(tx: Transaction, tagMap: Record<string, Tag>): { id: string; name: string; color: string }[] {
+  if (!tx.tags || tx.tags.length === 0) return [];
+  return tx.tags
+    .map((id) => tagMap[id])
+    .filter((t): t is Tag => !!t)
+    .map((t) => ({ id: t.id, name: t.name, color: t.color }));
 }
 
 function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
@@ -57,10 +72,11 @@ function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
 const GROUP_HEADER_H = 24;
 const TRANSACTION_H = 72;
 
-export function TransactionList({ transactions, categories, accounts, loading, onEdit, onDelete, onRowClick }: TransactionListProps) {
+export function TransactionList({ transactions, categories, accounts, tags = [], loading, onEdit, onDelete, onRowClick }: TransactionListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const categoryMap = useMemo(() => getCategoryMap(categories), [categories]);
   const accountMap = useMemo(() => getAccountMap(accounts), [accounts]);
+  const tagMap = useMemo(() => getTagMap(tags), [tags]);
   const groups = useMemo(() => groupByDate(transactions), [transactions]);
 
   const flatItems = useMemo(() => {
@@ -119,6 +135,7 @@ export function TransactionList({ transactions, categories, accounts, loading, o
                   category={categoryMap[tx.categoryId]}
                   account={accountMap[tx.accountId]}
                   toAccount={tx.toAccountId ? accountMap[tx.toAccountId] : undefined}
+                  tags={getTagsForTx(tx, tagMap)}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onRowClick={onRowClick}
@@ -168,6 +185,7 @@ export function TransactionList({ transactions, categories, accounts, loading, o
                 category={categoryMap[tx.categoryId]}
                 account={accountMap[tx.accountId]}
                 toAccount={tx.toAccountId ? accountMap[tx.toAccountId] : undefined}
+                tags={getTagsForTx(tx, tagMap)}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onRowClick={onRowClick}

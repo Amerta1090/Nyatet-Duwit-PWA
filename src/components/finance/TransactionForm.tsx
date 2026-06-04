@@ -11,6 +11,8 @@ import { getCategoryIcon } from '@/utils/icons';
 import { startOfDay } from '@/utils/date';
 import { cn } from '@/utils/cn';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { TagPicker } from './TagPicker';
+import { tagRepo } from '@/db/repositories/tagRepository';
 
 interface TransactionFormProps {
   open: boolean;
@@ -23,6 +25,7 @@ interface TransactionFormProps {
     accountId?: string;
     date?: number;
     notes?: string;
+    tags?: string[];
   };
 }
 
@@ -41,7 +44,10 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
   const [notes, setNotes] = useState('');
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<{ id: string; name: string; color: string }[]>([]);
+  const allTagsRef = useRef<{ id: string; name: string; color: string }[]>([]);
   const [confirmInsufficient, setConfirmInsufficient] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -79,6 +85,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
       });
       setNotes(prefill.notes ?? '');
+      setTagIds(prefill.tags ?? []);
     } else {
       setType(lastTransactionType);
       setAmount('');
@@ -90,6 +97,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
       });
       setNotes('');
+      setTagIds([]);
       setToAccountId(null);
     }
   }, [prefill, lastTransactionType, lastUsedCategoryId, lastUsedAccountId]);
@@ -102,6 +110,9 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
 
     categoryRepo.getAll().then(setCategories);
     accountRepo.getAll(true).then(setAccounts);
+    tagRepo.getAll().then((tags) => {
+      allTagsRef.current = tags.map((t) => ({ id: t.id, name: t.name, color: t.color }));
+    });
 
     if (!initializedRef.current) {
       initializedRef.current = true;
@@ -109,6 +120,18 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
       setTimeout(() => amountRef.current?.focus(), 300);
     }
   }, [open, initializeForm]);
+
+  useEffect(() => {
+    if (!notes.trim()) {
+      setSuggestedTags([]);
+      return;
+    }
+    const q = notes.toLowerCase();
+    const matched = allTagsRef.current.filter(
+      (t) => !tagIds.includes(t.id) && (t.name.toLowerCase().includes(q) || q.includes(t.name.toLowerCase())),
+    );
+    setSuggestedTags(matched.slice(0, 3));
+  }, [notes, tagIds]);
 
   async function handleSave() {
     if (!isValid || saving) return;
@@ -143,6 +166,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
           date: fullDate,
           notes: notes || undefined,
+          tags: tagIds.length > 0 ? tagIds : [],
         });
 
         updateLastUsed(categoryId!, accountId!, type);
@@ -158,6 +182,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           toAccountId: type === 'transfer' ? toAccountId ?? undefined : undefined,
           date: fullDate,
           notes: notes || undefined,
+          tags: tagIds.length > 0 ? tagIds : [],
         });
 
         updateLastUsed(categoryId!, accountId!, type);
@@ -358,7 +383,26 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
             placeholder="Misal: Makan siang di kantin"
             className="h-10 w-full rounded-lg border border-neutral-100 bg-white px-3 text-sm placeholder:text-neutral-300 focus:border-primary-500 focus:outline-none dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-100"
           />
+          {suggestedTags.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {suggestedTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => {
+                    setTagIds((prev) => [...prev, tag.id]);
+                    setSuggestedTags((prev) => prev.filter((t) => t.id !== tag.id));
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-white transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: tag.color }}
+                >
+                  + {tag.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        <TagPicker value={tagIds} onChange={setTagIds} />
 
         {transferInsufficient && (
           <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">

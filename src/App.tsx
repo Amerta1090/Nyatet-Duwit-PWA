@@ -28,6 +28,7 @@ const ExportPage = lazy(() => import('@/pages/More/Export'));
 const GoalsPage = lazy(() => import('@/pages/More/Goals'));
 const EmergencyFundPage = lazy(() => import('@/pages/More/EmergencyFund'));
 const DebtPage = lazy(() => import('@/pages/More/Debt'));
+const TagsPage = lazy(() => import('@/pages/More/Tags'));
 const OnboardingPage = lazy(() => import('@/pages/Onboarding'));
 
 function PageLoader() {
@@ -131,6 +132,7 @@ function AppContent() {
             <Route path="more/goals" element={<GoalsPage />} />
             <Route path="more/emergency-fund" element={<EmergencyFundPage />} />
             <Route path="more/debt" element={<DebtPage />} />
+            <Route path="more/tags" element={<TagsPage />} />
             <Route path="more/export" element={<ExportPage />} />
           </Route>
         </Routes>
@@ -147,6 +149,7 @@ function AppContent() {
           accountId: editTx.accountId,
           date: editTx.date,
           notes: editTx.notes,
+          tags: editTx.tags,
         } : undefined}
       />
     </ErrorBoundary>

@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useFilterStore, type DateFilterPreset } from '@/stores/filterStore';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { accountRepo } from '@/db/repositories/accountRepository';
-import type { Category, Account } from '@/types';
+import { tagRepo } from '@/db/repositories/tagRepository';
+import type { Category, Account, Tag } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
+import { X } from 'lucide-react';
 
 const datePresets: { key: DateFilterPreset; label: string }[] = [
   { key: 'all', label: 'Semua' },
@@ -27,11 +29,13 @@ export function FilterModal() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
   const [localDatePreset, setLocalDatePreset] = useState<DateFilterPreset>(store.datePreset);
   const [localType, setLocalType] = useState(store.type);
   const [localCategoryId, setLocalCategoryId] = useState<string | undefined>(store.categoryId);
   const [localAccountId, setLocalAccountId] = useState<string | undefined>(store.accountId);
+  const [localTagIds, setLocalTagIds] = useState<string[]>(store.tagIds);
 
   useEffect(() => {
     if (!showFilterModal) return;
@@ -39,8 +43,10 @@ export function FilterModal() {
     setLocalType(store.type);
     setLocalCategoryId(store.categoryId);
     setLocalAccountId(store.accountId);
+    setLocalTagIds(store.tagIds);
     categoryRepo.getAll().then(setCategories);
     accountRepo.getAll(true).then(setAccounts);
+    tagRepo.getAll().then(setTags);
   }, [showFilterModal]);
 
   if (!showFilterModal) return null;
@@ -50,12 +56,19 @@ export function FilterModal() {
     store.setType(localType);
     store.setCategoryId(localCategoryId);
     store.setAccountId(localAccountId);
+    store.setTagIds(localTagIds);
     setShowFilterModal(false);
   }
 
   function handleClear() {
     clearFilters();
     setShowFilterModal(false);
+  }
+
+  function toggleTag(tagId: string) {
+    setLocalTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+    );
   }
 
   return (
@@ -132,6 +145,33 @@ export function FilterModal() {
             ))}
           </select>
         </div>
+
+        {tags.length > 0 && (
+          <div className="mb-6">
+            <label className="mb-2 block text-xs font-medium text-neutral-500">Tag</label>
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((tag) => {
+                const selected = localTagIds.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.id)}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all',
+                      selected
+                        ? 'text-white'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300',
+                    )}
+                    style={selected ? { backgroundColor: tag.color } : undefined}
+                  >
+                    {tag.name}
+                    {selected && <X className="h-3 w-3" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Button variant="ghost" className="flex-1" onClick={handleClear}>

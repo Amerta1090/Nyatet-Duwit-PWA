@@ -2,14 +2,15 @@ import { useEffect, useState, useMemo, createElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
-import type { Transaction, Category } from '@/types';
+import { tagRepo } from '@/db/repositories/tagRepository';
+import type { Transaction, Category, Tag } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { getMonthRange } from '@/utils/date';
 import { BarChart } from '@/components/finance/BarChart';
 import { PieChart } from '@/components/finance/PieChart';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { getCategoryIcon } from '@/utils/icons';
-import { TrendingUp, TrendingDown, BarChart3, PieChart as PieChartIcon, Minus, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, PieChart as PieChartIcon, Minus, ChevronRight, Hash } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 export default function InsightsPage() {
@@ -24,6 +25,9 @@ export default function InsightsPage() {
   const [prevExpense, setPrevExpense] = useState(0);
   const [trendData, setTrendData] = useState<{ categoryId: string; current: number; prev: number }[]>([]);
   const [chartMode, setChartMode] = useState<'bar' | 'pie'>('bar');
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [tagSpending, setTagSpending] = useState<{ tagId: string; total: number }[]>([]);
+  const [prevTagSpending, setPrevTagSpending] = useState<{ tagId: string; total: number }[]>([]);
 
   const range = useMemo(() => {
     const d = new Date(year, month, 1);
@@ -45,7 +49,7 @@ export default function InsightsPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [txs, cats, prevInc, prevExp, curByCat, prevByCat, prev2ByCat] = await Promise.all([
+      const [txs, cats, prevInc, prevExp, curByCat, prevByCat, prev2ByCat, tagList, curTagSpending, prevTagSp] = await Promise.all([
         transactionRepo.getByDateRange(range.start, range.end),
         categoryRepo.getAll(),
         transactionRepo.getTotalByType('income', prevRange.start, prevRange.end),
@@ -53,9 +57,15 @@ export default function InsightsPage() {
         transactionRepo.getTotalByCategory(range.start, range.end),
         transactionRepo.getTotalByCategory(prevRange.start, prevRange.end),
         transactionRepo.getTotalByCategory(prev2Range.start, prev2Range.end),
+        tagRepo.getAll(),
+        tagRepo.getSpendingByTag(range.start, range.end),
+        tagRepo.getSpendingByTag(prevRange.start, prevRange.end),
       ]);
       setTransactions(txs);
       setCategories(cats);
+      setTags(tagList);
+      setTagSpending(curTagSpending);
+      setPrevTagSpending(prevTagSp);
       setPrevIncome(prevInc);
       setPrevExpense(prevExp);
 
@@ -306,6 +316,55 @@ export default function InsightsPage() {
                 );
               })}
           </div>
+        </div>
+      )}
+
+      {tags.length > 0 && (
+        <div className="rounded-xl bg-neutral-50 p-4 dark:bg-neutral-800">
+          <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-100">
+            <Hash className="h-4 w-4" />
+            Pengeluaran per Tag
+          </h3>
+          {(() => {
+            const tagMap = Object.fromEntries(tags.map((t) => [t.id, t]));
+            const prevMap = new Map(prevTagSpending.map((t) => [t.tagId, t.total]));
+            const sorted = [...tagSpending]
+              .sort((a, b) => b.total - a.total)
+              .slice(0, 10);
+            if (sorted.length === 0) {
+              return <p className="text-xs text-neutral-400">Belum ada pengeluaran dengan tag bulan ini</p>;
+            }
+            return (
+              <div className="flex flex-col gap-2">
+                {sorted.map(({ tagId, total }) => {
+                  const tag = tagMap[tagId];
+                  if (!tag) return null;
+                  const prev = prevMap.get(tagId) ?? 0;
+                  const change = prev > 0 ? ((total - prev) / prev) * 100 : 0;
+                  return (
+                    <div key={tagId} className="flex items-center gap-2">
+                      <div
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                        style={{ backgroundColor: `${tag.color}20` }}
+                      >
+                        <Hash className="h-3 w-3" style={{ color: tag.color }} />
+                      </div>
+                      <span className="flex-1 text-xs text-neutral-700 dark:text-neutral-100">{tag.name}</span>
+                      <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(total)}</span>
+                      {prev > 0 && (
+                        <span className={cn(
+                          'text-[10px] font-medium',
+                          Math.abs(change) < 5 ? 'text-neutral-400' : change > 0 ? 'text-danger-500' : 'text-accent-500',
+                        )}>
+                          {Math.abs(change) < 5 ? '' : `${change > 0 ? '+' : ''}${change.toFixed(0)}%`}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
