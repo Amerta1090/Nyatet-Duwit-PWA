@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Transaction, Category, Account, Tag } from '@/types';
 import { TransactionItem } from './TransactionItem';
-import { formatDateRelative, formatDate } from '@/utils/format';
+import { formatDateRelative, formatDate, formatCurrency } from '@/utils/format';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { ArrowLeftRight } from 'lucide-react';
 
@@ -10,6 +10,8 @@ interface GroupedTransactions {
   label: string;
   date: number;
   transactions: Transaction[];
+  totalIncome: number;
+  totalExpense: number;
 }
 
 interface TransactionListProps {
@@ -50,15 +52,23 @@ function getTagsForTx(tx: Transaction, tagMap: Record<string, Tag>): { id: strin
 }
 
 function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
-  const groups = new Map<string, { label: string; date: number; txs: Transaction[] }>();
+  const groups = new Map<string, { label: string; date: number; txs: Transaction[]; totalIncome: number; totalExpense: number }>();
 
   for (const tx of transactions) {
     const key = formatDateRelative(tx.date);
     const existing = groups.get(key);
     if (existing) {
       existing.txs.push(tx);
+      if (tx.type === 'income') existing.totalIncome += tx.amount;
+      else if (tx.type === 'expense') existing.totalExpense += tx.amount;
     } else {
-      groups.set(key, { label: key, date: tx.date, txs: [tx] });
+      groups.set(key, {
+        label: key,
+        date: tx.date,
+        txs: [tx],
+        totalIncome: tx.type === 'income' ? tx.amount : 0,
+        totalExpense: tx.type === 'expense' ? tx.amount : 0,
+      });
     }
   }
 
@@ -66,10 +76,12 @@ function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
     label: g.label,
     date: g.date,
     transactions: g.txs,
+    totalIncome: g.totalIncome,
+    totalExpense: g.totalExpense,
   }));
 }
 
-const GROUP_HEADER_H = 24;
+const GROUP_HEADER_H = 40;
 const TRANSACTION_H = 72;
 
 export function TransactionList({ transactions, categories, accounts, tags = [], loading, onEdit, onDelete, onRowClick }: TransactionListProps) {
@@ -126,6 +138,20 @@ export function TransactionList({ transactions, categories, accounts, tags = [],
               <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
                 {group.label} · {formatDate(group.date, 'dd MMM yyyy')}
               </h3>
+              {(group.totalIncome > 0 || group.totalExpense > 0) && (
+                <div className="mt-0.5 flex items-center gap-3">
+                  {group.totalExpense > 0 && (
+                    <span className="text-[11px] text-danger-500">
+                      ↓ {formatCurrency(group.totalExpense)}
+                    </span>
+                  )}
+                  {group.totalIncome > 0 && (
+                    <span className="text-[11px] text-accent-500">
+                      ↑ {formatCurrency(group.totalIncome)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               {group.transactions.map((tx) => (
@@ -169,6 +195,20 @@ export function TransactionList({ transactions, categories, accounts, tags = [],
                   <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
                     {g.label} · {formatDate(g.date, 'dd MMM yyyy')}
                   </h3>
+                  {(g.totalIncome > 0 || g.totalExpense > 0) && (
+                    <div className="mt-0.5 flex items-center gap-3">
+                      {g.totalExpense > 0 && (
+                        <span className="text-[11px] text-danger-500">
+                          ↓ {formatCurrency(g.totalExpense)}
+                        </span>
+                      )}
+                      {g.totalIncome > 0 && (
+                        <span className="text-[11px] text-accent-500">
+                          ↑ {formatCurrency(g.totalIncome)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
