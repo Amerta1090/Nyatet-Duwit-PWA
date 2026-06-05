@@ -55,7 +55,7 @@ function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
   const groups = new Map<string, { label: string; date: number; txs: Transaction[]; totalIncome: number; totalExpense: number }>();
 
   for (const tx of transactions) {
-    const key = formatDateRelative(tx.date);
+    const key = formatDate(tx.date, 'yyyy-MM-dd');
     const existing = groups.get(key);
     if (existing) {
       existing.txs.push(tx);
@@ -63,7 +63,7 @@ function groupByDate(transactions: Transaction[]): GroupedTransactions[] {
       else if (tx.type === 'expense') existing.totalExpense += tx.amount;
     } else {
       groups.set(key, {
-        label: key,
+        label: formatDateRelative(tx.date),
         date: tx.date,
         txs: [tx],
         totalIncome: tx.type === 'income' ? tx.amount : 0,
