@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Sparkles, Minus } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/utils/cn';
 
@@ -14,11 +14,43 @@ export function YouSavedHighlight({ currentIncome, currentExpense, prevIncome, p
   const currentSaved = currentIncome - currentExpense;
   const prevSaved = prevIncome - prevExpense;
   const savedDiff = currentSaved - prevSaved;
+  const expenseDiff = currentExpense - prevExpense;
+  const incomeDiff = currentIncome - prevIncome;
 
   const hasPrevData = prevIncome > 0 || prevExpense > 0;
-  const isPositive = savedDiff >= 0;
 
   if (currentIncome === 0 && currentExpense === 0) return null;
+
+  function getMeta() {
+    if (!hasPrevData) {
+      return { title: 'Bulan Pertama', Icon: Sparkles, isPositive: true };
+    }
+
+    if (savedDiff > 0) {
+      if (expenseDiff < 0) return { title: 'Pengeluaran Turun', Icon: TrendingDown, isPositive: true };
+      if (incomeDiff > 0) return { title: 'Pemasukan Naik', Icon: TrendingUp, isPositive: true };
+      return { title: 'Kamu Hemat!', Icon: Sparkles, isPositive: true };
+    }
+
+    if (savedDiff < 0) {
+      const expenseUp = expenseDiff > 0;
+      const incomeDown = incomeDiff < 0;
+
+      if (expenseUp && incomeDown) {
+        return Math.abs(expenseDiff) >= Math.abs(incomeDiff)
+          ? { title: 'Pengeluaran Naik', Icon: TrendingUp, isPositive: false }
+          : { title: 'Pemasukan Turun', Icon: TrendingDown, isPositive: false };
+      }
+      if (expenseUp) return { title: 'Pengeluaran Naik', Icon: TrendingUp, isPositive: false };
+      if (incomeDown) return { title: 'Pemasukan Turun', Icon: TrendingDown, isPositive: false };
+
+      return { title: 'Pengeluaran Naik', Icon: TrendingUp, isPositive: false };
+    }
+
+    return { title: 'Tetap Stabil', Icon: Minus, isPositive: true };
+  }
+
+  const { title, Icon, isPositive } = getMeta();
 
   return (
     <div
@@ -30,14 +62,10 @@ export function YouSavedHighlight({ currentIncome, currentExpense, prevIncome, p
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {isPositive ? (
-            <Sparkles className={cn('text-accent-500', minimal ? 'h-4 w-4' : 'h-5 w-5')} />
-          ) : (
-            <TrendingDown className={cn('text-danger-500', minimal ? 'h-4 w-4' : 'h-5 w-5')} />
-          )}
+          <Icon className={cn(isPositive ? 'text-accent-500' : 'text-danger-500', minimal ? 'h-4 w-4' : 'h-5 w-5')} />
           <div>
             <p className={cn('font-semibold', minimal ? 'text-xs' : 'text-sm', isPositive ? 'text-accent-600 dark:text-accent-400' : 'text-danger-600 dark:text-danger-400')}>
-              {isPositive ? 'Kamu Hemat!' : 'Pengeluaran Naik'}
+              {title}
             </p>
             {!minimal && (
               <p className="text-xs text-neutral-500 mt-0.5">
@@ -61,9 +89,7 @@ export function YouSavedHighlight({ currentIncome, currentExpense, prevIncome, p
       </div>
       {!minimal && hasPrevData && (
         <p className="mt-2 text-xs text-neutral-400">
-          {isPositive
-            ? `Kamu hemat ${formatCurrency(savedDiff)} dari bulan lalu!`
-            : `Pengeluaran naik ${formatCurrency(Math.abs(savedDiff))} dari bulan lalu`}
+          Sisa {isPositive ? 'meningkat' : 'menurun'} {formatCurrency(Math.abs(savedDiff))} dari bulan lalu
         </p>
       )}
     </div>
