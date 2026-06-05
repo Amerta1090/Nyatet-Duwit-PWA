@@ -69,7 +69,7 @@ export function YouSavedHighlight({ currentIncome, currentExpense, prevIncome, p
             </p>
             {!minimal && (
               <p className="text-xs text-neutral-500 mt-0.5">
-                Sisa: {formatCurrency(Math.abs(currentSaved))}
+                Sisa: {formatCurrency(currentSaved)}
               </p>
             )}
           </div>
