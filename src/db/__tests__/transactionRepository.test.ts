@@ -76,6 +76,25 @@ describe('transactionRepo', () => {
     expect(results.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('getMonthlyTotals returns aggregated income/expense per month', async () => {
+    const accounts = await accountRepo.getAll(true);
+    const account = accounts[0]!;
+    const now = Date.now();
+    const thisMonth = new Date(now).getMonth();
+    const thisYear = new Date(now).getFullYear();
+
+    await transactionRepo.create({ type: 'income', amount: 5000000, categoryId: 'cat-salary', accountId: account.id, date: now });
+    await transactionRepo.create({ type: 'expense', amount: 250000, categoryId: 'cat-food', accountId: account.id, date: now });
+
+    const totals = await transactionRepo.getMonthlyTotals(3);
+    expect(totals.length).toBeLessThanOrEqual(3);
+    const current = totals[totals.length - 1];
+    expect(current.month).toBe(thisMonth);
+    expect(current.year).toBe(thisYear);
+    expect(current.income).toBeGreaterThan(0);
+    expect(current.expense).toBeGreaterThan(0);
+  });
+
   it('deletes transaction and reverses balance', async () => {
     const account = (await accountRepo.getAll(true))[0]!;
     const initialBalance = account.balance;

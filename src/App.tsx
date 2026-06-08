@@ -15,6 +15,8 @@ const HomePage = lazy(() => import('@/pages/Home'));
 const TransactionsPage = lazy(() => import('@/pages/Transactions'));
 const InsightsPage = lazy(() => import('@/pages/Insights'));
 const InsightsReviewPage = lazy(() => import('@/pages/Insights/Review'));
+const TrendPage = lazy(() => import('@/pages/Insights/Trend'));
+const CashflowPage = lazy(() => import('@/pages/Insights/Cashflow'));
 const MorePage = lazy(() => import('@/pages/More'));
 const TransactionDetailPage = lazy(() => import('@/pages/Transactions/Detail'));
 const AccountsPage = lazy(() => import('@/pages/More/Accounts'));
@@ -121,6 +123,8 @@ function AppContent() {
             <Route path="transactions/:id" element={<TransactionDetailPage />} />
             <Route path="insights" element={<InsightsPage />} />
             <Route path="insights/review" element={<InsightsReviewPage />} />
+            <Route path="insights/trend" element={<TrendPage />} />
+            <Route path="insights/cashflow" element={<CashflowPage />} />
             <Route path="more" element={<MorePage />} />
             <Route path="more/accounts" element={<AccountsPage />} />
             <Route path="more/categories" element={<CategoriesPage />} />

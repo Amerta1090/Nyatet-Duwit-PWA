@@ -271,6 +271,47 @@ export const transactionRepo = {
     return { totalExpense, totalIncome, topCategories, transactionCount: txs.length };
   },
 
+  async getMonthlyTotals(
+    months: number,
+  ): Promise<{ month: number; year: number; income: number; expense: number }[]> {
+    const now = new Date();
+    const endDate = now.getTime();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1).getTime();
+
+    const allTxs = await db.transactions
+      .where('date')
+      .between(startDate, endDate, true, true)
+      .toArray();
+
+    const monthIndex = (ts: number) => {
+      const d = new Date(ts);
+      return d.getFullYear() * 12 + d.getMonth();
+    };
+    const startIdx = monthIndex(startDate);
+    const endIdx = monthIndex(endDate);
+
+    const grouped = new Map<number, { income: number; expense: number }>();
+    for (let i = startIdx; i <= endIdx; i++) {
+      grouped.set(i, { income: 0, expense: 0 });
+    }
+
+    for (const tx of allTxs) {
+      const idx = monthIndex(tx.date);
+      const bucket = grouped.get(idx);
+      if (bucket) {
+        if (tx.type === 'income') bucket.income += tx.amount;
+        else if (tx.type === 'expense') bucket.expense += tx.amount;
+      }
+    }
+
+    return Array.from(grouped.entries()).map(([idx, val]) => ({
+      month: idx % 12,
+      year: Math.floor(idx / 12),
+      income: val.income,
+      expense: val.expense,
+    }));
+  },
+
   async getMonthlyComparison(year: number, month: number): Promise<{
     income: number;
     expense: number;

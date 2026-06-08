@@ -10,7 +10,7 @@ import { BarChart } from '@/components/finance/BarChart';
 import { PieChart } from '@/components/finance/PieChart';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { getCategoryIcon } from '@/utils/icons';
-import { TrendingUp, TrendingDown, BarChart3, PieChart as PieChartIcon, Minus, ChevronRight, Hash } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, PieChart as PieChartIcon, Minus, ChevronRight, Hash, LineChart, DollarSign } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 export default function InsightsPage() {
@@ -367,6 +367,28 @@ export default function InsightsPage() {
           })()}
         </div>
       )}
+
+      <button
+        onClick={() => navigate('/insights/trend')}
+        className="flex w-full items-center justify-between rounded-xl bg-neutral-50 p-4 dark:bg-neutral-800"
+      >
+        <div className="flex items-center gap-2">
+          <LineChart className="h-4 w-4 text-primary-500" />
+          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-100">Trend Pengeluaran</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-neutral-400" />
+      </button>
+
+      <button
+        onClick={() => navigate('/insights/cashflow')}
+        className="flex w-full items-center justify-between rounded-xl bg-neutral-50 p-4 dark:bg-neutral-800"
+      >
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-accent-500" />
+          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-100">Arus Kas Bulanan</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-neutral-400" />
+      </button>
 
       <button
         onClick={() => navigate('/insights/review')}
