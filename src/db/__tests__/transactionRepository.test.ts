@@ -88,7 +88,7 @@ describe('transactionRepo', () => {
 
     const totals = await transactionRepo.getMonthlyTotals(3);
     expect(totals.length).toBeLessThanOrEqual(3);
-    const current = totals[totals.length - 1];
+    const current = totals[totals.length - 1]!;
     expect(current.month).toBe(thisMonth);
     expect(current.year).toBe(thisYear);
     expect(current.income).toBeGreaterThan(0);

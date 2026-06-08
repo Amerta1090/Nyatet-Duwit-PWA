@@ -22,9 +22,11 @@ export function movingAverage(data: DataPoint[], window: number): { date: number
   for (let i = window - 1; i < data.length; i++) {
     let sum = 0;
     for (let j = 0; j < window; j++) {
-      sum += data[i - j].total;
+      const pt = data[i - j];
+      if (pt) sum += pt.total;
     }
-    result.push({ date: data[i].date, value: sum / window });
+    const pt = data[i];
+    if (pt) result.push({ date: pt.date, value: sum / window });
   }
   return result;
 }
@@ -34,14 +36,18 @@ function fillDailyGaps(sorted: DataPoint[]): DataPoint[] {
   const filled: DataPoint[] = [];
   const DAY_MS = 86400000;
   for (let i = 0; i < sorted.length - 1; i++) {
-    filled.push(sorted[i]);
-    let next = sorted[i].date + DAY_MS;
-    while (next < sorted[i + 1].date) {
-      filled.push({ date: next, total: 0 });
-      next += DAY_MS;
+    const cur = sorted[i];
+    const next = sorted[i + 1];
+    if (!cur || !next) continue;
+    filled.push(cur);
+    let cursor = cur.date + DAY_MS;
+    while (cursor < next.date) {
+      filled.push({ date: cursor, total: 0 });
+      cursor += DAY_MS;
     }
   }
-  filled.push(sorted[sorted.length - 1]);
+  const last = sorted[sorted.length - 1];
+  if (last) filled.push(last);
   return filled;
 }
 
@@ -176,11 +182,16 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
     const step = Math.max(1, Math.floor(visiblePoints.length / count));
     const ticks: { date: number; x: number }[] = [];
     for (let i = 0; i < visiblePoints.length; i += step) {
-      ticks.push({ date: visiblePoints[i].date, x: xScale(i, visiblePoints.length) });
+      const pt = visiblePoints[i];
+      if (pt) ticks.push({ date: pt.date, x: xScale(i, visiblePoints.length) });
     }
     const last = visiblePoints[visiblePoints.length - 1];
-    if (ticks.length === 0 || ticks[ticks.length - 1].date !== last.date) {
-      ticks.push({ date: last.date, x: xScale(visiblePoints.length - 1, visiblePoints.length) });
+    if (last) {
+      const lastDate = last.date;
+      const existing = ticks[ticks.length - 1];
+      if (!existing || existing.date !== lastDate) {
+        ticks.push({ date: lastDate, x: xScale(visiblePoints.length - 1, visiblePoints.length) });
+      }
     }
     return ticks;
   }, [visiblePoints, xScale, zoom]);
@@ -189,7 +200,7 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
     (e: React.MouseEvent | React.TouchEvent) => {
       const rect = svgRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX;
       const x = clientX - rect.left;
       let closest = 0;
       let minDist = Infinity;

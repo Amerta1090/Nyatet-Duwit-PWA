@@ -41,7 +41,7 @@ describe('movingAverage', () => {
     ];
     const result = movingAverage(data, 3);
     expect(result).toHaveLength(1);
-    expect(result[0].value).toBe(2_000_000);
+    expect(result[0]!.value).toBe(2_000_000);
   });
 
   it('handles window size equal to data length', () => {
@@ -52,7 +52,7 @@ describe('movingAverage', () => {
     ];
     const result = movingAverage(data, 3);
     expect(result).toHaveLength(1);
-    expect(result[0].value).toBe(20);
+    expect(result[0]!.value).toBe(20);
   });
 });
 
