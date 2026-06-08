@@ -260,6 +260,10 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
             <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.15} />
             <stop offset="100%" stopColor="#3B82F6" stopOpacity={0} />
           </linearGradient>
+          <linearGradient id="compareGradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.12} />
+            <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0} />
+          </linearGradient>
         </defs>
 
         {yTicks.map((tick) => {
@@ -287,7 +291,13 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
         ))}
 
         {comparePath && (
-          <path d={comparePath} fill="none" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="6 3" opacity={0.6} />
+          <>
+            <path
+              d={`${comparePath} L ${xScale(comparePoints.length - 1, comparePoints.length)} ${PADDING.top + plotH} L ${xScale(0, comparePoints.length)} ${PADDING.top + plotH} Z`}
+              fill="url(#compareGradient)"
+            />
+            <path d={comparePath} fill="none" stroke="#8B5CF6" strokeWidth={2} strokeDasharray="6 3" />
+          </>
         )}
 
         {visiblePoints.length > 1 && (
@@ -366,7 +376,7 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
         </div>
         {compareData && compareData.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 border-t-2 border-dashed border-slate-400" />
+            <span className="h-0.5 w-4 border-t-2 border-dashed border-violet-500" />
             Periode sebelumnya
           </div>
         )}

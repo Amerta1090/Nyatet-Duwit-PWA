@@ -141,6 +141,12 @@ export default function TrendPage() {
         />
       </div>
 
+      {showCompare && compareData.length === 0 && !loading && (
+        <p className="mt-2 text-center text-xs text-neutral-400">
+          Belum ada data pengeluaran untuk periode sebelumnya.
+        </p>
+      )}
+
       {data.length === 0 && (
         <p className="mt-2 text-center text-xs text-neutral-400">
           Transaksi akan muncul di grafik setelah kamu mencatat pengeluaran harian.
