@@ -231,7 +231,6 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
     setOffset(0);
   }, []);
 
-  const totalPoints = points.length;
   const maxOffset = 1 - 1 / zoom;
 
   const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -275,7 +274,7 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
         ref={svgRef}
         width={dim.w}
         height={dim.h}
-        style={svgAnimStyle as React.CSSProperties}
+        style={{ ...(svgAnimStyle as React.CSSProperties), cursor: zoom > 1 ? 'grab' : 'default' }}
         onMouseMove={(e) => { if (!isDragging.current) handleTap(e); handleDragMove(e); }}
         onTouchMove={(e) => { handleTap(e); handleDragMove(e); }}
         onTouchStart={handleDragStart}
@@ -284,9 +283,7 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
         onTouchEnd={handleDragEnd}
         onMouseLeave={() => { setTooltip(null); handleDragEnd(); }}
         onWheel={handleWheel}
-        style={{ cursor: zoom > 1 ? 'grab' : 'default' }}
         className="overflow-visible transition-all duration-500 select-none"
-        draggable={false}
       >
         <defs>
           <linearGradient id="trendGradient" x1="0" x2="0" y1="0" y2="1">

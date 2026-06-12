@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileSpreadsheet, ArrowLeft, Check, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Upload, FileSpreadsheet, ArrowLeft, Check, AlertTriangle } from 'lucide-react';
 import { parseCsv, detectColumnMapping, processImport } from '@/utils/importCsv';
 import type { CsvRow, ImportMapping, ImportedTransaction } from '@/utils/importCsv';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
