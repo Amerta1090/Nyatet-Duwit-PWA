@@ -56,8 +56,9 @@ export default function ImportPage() {
       return;
     }
     setCsvRows(rows);
-    setHeaders(Object.keys(rows[0]));
-    const detected = detectColumnMapping(Object.keys(rows[0]));
+    const firstRow = rows[0]!;
+    setHeaders(Object.keys(firstRow));
+    const detected = detectColumnMapping(Object.keys(firstRow));
     setMapping(detected);
     setStep('mapping');
   }, [showToast]);

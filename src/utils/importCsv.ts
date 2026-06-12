@@ -34,11 +34,15 @@ export function parseCsv(text: string): CsvRow[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return [];
 
-  const headers = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
+  const headerLine = lines[0];
+  if (!headerLine) return [];
+  const headers = parseCsvLine(headerLine).map((h) => h.trim().toLowerCase());
   const rows: CsvRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCsvLine(lines[i]);
+    const line = lines[i];
+    if (!line) continue;
+    const values = parseCsvLine(line);
     if (values.length === 0) continue;
     if (values.every((v) => !v.trim())) continue;
     const row: CsvRow = {};
@@ -91,9 +95,9 @@ export function parseDate(value: string): number | null {
   // DD/MM/YYYY
   const dmy = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmy) {
-    const d = parseInt(dmy[1], 10);
-    const m = parseInt(dmy[2], 10) - 1;
-    const y = parseInt(dmy[3], 10);
+    const d = parseInt(dmy[1]!, 10);
+    const m = parseInt(dmy[2]!, 10) - 1;
+    const y = parseInt(dmy[3]!, 10);
     const date = new Date(y, m, d);
     if (date.getDate() === d) return date.getTime();
   }
@@ -101,9 +105,9 @@ export function parseDate(value: string): number | null {
   // MM/DD/YYYY
   const mdy = trimmed.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (mdy) {
-    const m = parseInt(mdy[1], 10) - 1;
-    const d = parseInt(mdy[2], 10);
-    const y = parseInt(mdy[3], 10);
+    const m = parseInt(mdy[1]!, 10) - 1;
+    const d = parseInt(mdy[2]!, 10);
+    const y = parseInt(mdy[3]!, 10);
     const date = new Date(y, m, d);
     if (date.getDate() === d) return date.getTime();
   }
@@ -111,9 +115,9 @@ export function parseDate(value: string): number | null {
   // YYYY-MM-DD
   const ymd = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (ymd) {
-    const y = parseInt(ymd[1], 10);
-    const m = parseInt(ymd[2], 10) - 1;
-    const d = parseInt(ymd[3], 10);
+    const y = parseInt(ymd[1]!, 10);
+    const m = parseInt(ymd[2]!, 10) - 1;
+    const d = parseInt(ymd[3]!, 10);
     const date = new Date(y, m, d);
     if (date.getDate() === d) return date.getTime();
   }
@@ -160,7 +164,7 @@ export function detectColumnMapping(headers: string[]): ImportMapping {
   const find = (patterns: string[]): string | null => {
     for (const p of patterns) {
       const idx = h.findIndex((x) => x.includes(p));
-      if (idx >= 0) return headers[idx];
+      if (idx >= 0) return headers[idx] ?? null;
     }
     return null;
   };
@@ -204,30 +208,38 @@ export async function processImport(
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
+    if (!r) continue;
     const rowNum = i + 2;
 
-    const dateVal = mapping.date ? parseDate(r[mapping.date]) : null;
+    const rawDate = mapping.date ? r[mapping.date] : undefined;
+    const dateVal = rawDate ? parseDate(rawDate) : null;
     if (dateVal === null) {
       result.errors.push({ row: rowNum, message: 'Tanggal tidak valid' });
       continue;
     }
 
-    const typeVal = mapping.type ? parseType(r[mapping.type]) : null;
+    const rawType = mapping.type ? r[mapping.type] : undefined;
+    const typeVal = rawType ? parseType(rawType) : null;
     if (typeVal === null) {
       result.errors.push({ row: rowNum, message: 'Tipe transaksi tidak valid' });
       continue;
     }
 
-    const amountVal = mapping.amount ? parseAmount(r[mapping.amount]) : null;
+    const rawAmount = mapping.amount ? r[mapping.amount] : undefined;
+    const amountVal = rawAmount ? parseAmount(rawAmount) : null;
     if (amountVal === null || amountVal <= 0) {
       result.errors.push({ row: rowNum, message: 'Jumlah tidak valid' });
       continue;
     }
 
-    const categoryName = mapping.category ? (r[mapping.category] || '-').trim() : '-';
-    const accountName = mapping.account ? (r[mapping.account] || '-').trim() : '-';
-    const notes = mapping.notes ? (r[mapping.notes] || '').trim() : '';
-    const tagsStr = mapping.tags ? (r[mapping.tags] || '').trim() : '';
+    const rawCategory = mapping.category ? r[mapping.category] : undefined;
+    const categoryName = rawCategory ? rawCategory.trim() || '-' : '-';
+    const rawAccount = mapping.account ? r[mapping.account] : undefined;
+    const accountName = rawAccount ? rawAccount.trim() || '-' : '-';
+    const rawNotes = mapping.notes ? r[mapping.notes] : undefined;
+    const notes = rawNotes ? rawNotes.trim() : '';
+    const rawTags = mapping.tags ? r[mapping.tags] : undefined;
+    const tagsStr = rawTags ? rawTags.trim() : '';
 
     if (!catNameMap.has(categoryName.toLowerCase()) && categoryName !== '-') {
       if (!result.unmatchedCategories.includes(categoryName)) {
