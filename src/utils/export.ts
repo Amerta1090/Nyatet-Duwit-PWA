@@ -17,6 +17,7 @@ export interface ExportData {
     account: string;
     amount: string;
     notes: string;
+    tags: string;
   }[];
   totalIncome: number;
   totalExpense: number;
@@ -56,6 +57,7 @@ export async function collectExportData(options: ExportOptions): Promise<ExportD
         account: accMap[tx.accountId]?.name ?? '-',
         amount: tx.type === 'expense' ? `-${formatCurrency(tx.amount)}` : formatCurrency(tx.amount),
         notes: tx.notes ?? '',
+        tags: tx.tags?.length ? tx.tags.join(', ') : '',
       })),
     totalIncome: income,
     totalExpense: expense,
@@ -65,7 +67,7 @@ export async function collectExportData(options: ExportOptions): Promise<ExportD
 }
 
 export function generateCSV(data: ExportData): string {
-  const header = 'Tanggal,Tipe,Kategori,Akun,Jumlah,Catatan';
+  const header = 'Tanggal,Tipe,Kategori,Akun,Jumlah,Catatan,Tag';
   const rows = data.transactions.map((tx) => {
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
     return [
@@ -75,6 +77,7 @@ export function generateCSV(data: ExportData): string {
       escape(tx.account),
       escape(tx.amount),
       escape(tx.notes),
+      escape(tx.tags),
     ].join(',');
   });
 
@@ -100,6 +103,7 @@ export function generatePDFHtml(data: ExportData): string {
       <td>${tx.account}</td>
       <td style="text-align:right">${tx.amount}</td>
       <td>${tx.notes}</td>
+      <td>${tx.tags}</td>
     </tr>
   `).join('');
 
@@ -147,7 +151,7 @@ export function generatePDFHtml(data: ExportData): string {
   </div>
   <table>
     <thead>
-      <tr><th>Tanggal</th><th>Tipe</th><th>Kategori</th><th>Akun</th><th style="text-align:right">Jumlah</th><th>Catatan</th></tr>
+      <tr><th>Tanggal</th><th>Tipe</th><th>Kategori</th><th>Akun</th><th style="text-align:right">Jumlah</th><th>Catatan</th><th>Tag</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>

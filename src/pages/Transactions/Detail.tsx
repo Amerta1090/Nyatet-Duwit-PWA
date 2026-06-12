@@ -3,15 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { accountRepo } from '@/db/repositories/accountRepository';
+import { tagRepo } from '@/db/repositories/tagRepository';
+import { goalRepo } from '@/db/repositories/goalRepository';
 import { TransactionForm } from '@/components/finance/TransactionForm';
 import { useUIStore } from '@/stores/uiStore';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { getCategoryIcon } from '@/utils/icons';
-import { ArrowLeft, Trash2, Pencil } from 'lucide-react';
+import { ArrowLeft, Trash2, Pencil, Hash } from 'lucide-react';
 import { Skeleton, Modal } from '@/components/ui';
 import { cn } from '@/utils/cn';
 import { createElement } from 'react';
-import type { Transaction, Category, Account } from '@/types';
+import type { Transaction, Category, Account, Tag, Goal } from '@/types';
 
 export default function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +24,8 @@ export default function TransactionDetailPage() {
   const [category, setCategory] = useState<Category | undefined>();
   const [account, setAccount] = useState<Account | undefined>();
   const [toAccount, setToAccount] = useState<Account | undefined>();
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [goal, setGoal] = useState<Goal | undefined>();
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -33,12 +37,20 @@ export default function TransactionDetailPage() {
       transactionRepo.getById(id),
       categoryRepo.getAll(),
       accountRepo.getAll(true),
-    ]).then(([txData, cats, accs]) => {
+      tagRepo.getAll(),
+      goalRepo.getAll(),
+    ]).then(([txData, cats, accs, tagList, goalList]) => {
       if (!txData) { setLoading(false); return; }
       setTx(txData);
       setCategory(cats.find((c) => c.id === txData.categoryId));
       setAccount(accs.find((a) => a.id === txData.accountId));
       setToAccount(txData.toAccountId ? accs.find((a) => a.id === txData.toAccountId) : undefined);
+      if (txData.tags && txData.tags.length > 0) {
+        setTags(tagList.filter((t) => txData.tags!.includes(t.id)));
+      }
+      if (txData.goalId) {
+        setGoal(goalList.find((g) => g.id === txData.goalId));
+      }
       setLoading(false);
     });
   }, [id]);
@@ -152,6 +164,29 @@ export default function TransactionDetailPage() {
           <div className="flex justify-between">
             <span className="text-sm text-neutral-500">Catatan</span>
             <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{tx.notes}</span>
+          </div>
+        )}
+        {tags.length > 0 && (
+          <div className="flex justify-between items-start">
+            <span className="text-sm text-neutral-500">Tag</span>
+            <div className="flex flex-wrap gap-1 justify-end">
+              {tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
+                  style={{ backgroundColor: tag.color }}
+                >
+                  <Hash className="h-2.5 w-2.5" />
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {goal && (
+          <div className="flex justify-between">
+            <span className="text-sm text-neutral-500">Goal</span>
+            <span className="text-sm font-medium text-primary-500 dark:text-primary-400">{goal.name}</span>
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@ import { InstallPrompt } from '@/components/pwa';
 import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
 import { TransactionForm } from '@/components/finance/TransactionForm';
+import { AppLockProvider } from '@/components/auth/AppLockProvider';
 import { useAppStore } from '@/stores/appStore';
 import { db } from '@/db/schema';
 import type { Transaction } from '@/types';
@@ -27,6 +28,7 @@ const ReconcilePage = lazy(() => import('@/pages/More/Reconcile'));
 const SettingsPage = lazy(() => import('@/pages/More/Settings'));
 const BackupRestorePage = lazy(() => import('@/pages/More/Backup'));
 const ExportPage = lazy(() => import('@/pages/More/Export'));
+const ImportPage = lazy(() => import('@/pages/More/Import'));
 const GoalsPage = lazy(() => import('@/pages/More/Goals'));
 const EmergencyFundPage = lazy(() => import('@/pages/More/EmergencyFund'));
 const DebtPage = lazy(() => import('@/pages/More/Debt'));
@@ -114,6 +116,7 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
+      <AppLockProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/onboarding" element={<OnboardingPage />} />
@@ -138,9 +141,11 @@ function AppContent() {
             <Route path="more/debt" element={<DebtPage />} />
             <Route path="more/tags" element={<TagsPage />} />
             <Route path="more/export" element={<ExportPage />} />
+            <Route path="more/import" element={<ImportPage />} />
           </Route>
         </Routes>
       </Suspense>
+      </AppLockProvider>
       <InstallPrompt />
       <TransactionForm
         open={formOpen}

@@ -13,6 +13,8 @@ import { cn } from '@/utils/cn';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TagPicker } from './TagPicker';
 import { tagRepo } from '@/db/repositories/tagRepository';
+import { goalRepo } from '@/db/repositories/goalRepository';
+import type { Goal } from '@/types';
 
 interface TransactionFormProps {
   open: boolean;
@@ -51,6 +53,8 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
   const [confirmInsufficient, setConfirmInsufficient] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalId, setGoalId] = useState<string | null>(null);
 
   const amountRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
@@ -86,6 +90,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
       });
       setNotes(prefill.notes ?? '');
       setTagIds(prefill.tags ?? []);
+      setGoalId(null);
     } else {
       setType(lastTransactionType);
       setAmount('');
@@ -113,6 +118,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
     tagRepo.getAll().then((tags) => {
       allTagsRef.current = tags.map((t) => ({ id: t.id, name: t.name, color: t.color }));
     });
+    goalRepo.getAll().then((g) => setGoals(g.filter((goal) => !goal.achievedAt)));
 
     if (!initializedRef.current) {
       initializedRef.current = true;
@@ -167,6 +173,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           date: fullDate,
           notes: notes || undefined,
           tags: tagIds.length > 0 ? tagIds : [],
+          goalId: goalId ?? undefined,
         });
 
         updateLastUsed(categoryId!, accountId!, type);
@@ -183,6 +190,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           date: fullDate,
           notes: notes || undefined,
           tags: tagIds.length > 0 ? tagIds : [],
+          goalId: goalId ?? undefined,
         });
 
         updateLastUsed(categoryId!, accountId!, type);
@@ -403,6 +411,22 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
         </div>
 
         <TagPicker value={tagIds} onChange={setTagIds} />
+
+        {goals.length > 0 && (
+          <div>
+            <label className="mb-1 text-xs font-medium text-neutral-500">Goal (opsional)</label>
+            <select
+              value={goalId ?? ''}
+              onChange={(e) => setGoalId(e.target.value || null)}
+              className="h-10 w-full rounded-lg border border-neutral-100 bg-white px-3 text-sm dark:border-neutral-500 dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              <option value="">Tidak ada goal</option>
+              {goals.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {transferInsufficient && (
           <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">

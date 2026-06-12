@@ -11,6 +11,7 @@ export interface CreateTransactionInput {
   date: number;
   notes?: string;
   tags?: string[];
+  goalId?: string;
 }
 
 export interface GetAllOptions {

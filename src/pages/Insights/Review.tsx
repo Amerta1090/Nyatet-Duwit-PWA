@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo, createElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
-import type { Category } from '@/types';
+import { tagRepo } from '@/db/repositories/tagRepository';
+import type { Category, Tag } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { getMonthLabel, getDayLabel } from '@/utils/date';
 import { YouSavedHighlight } from '@/components/finance/YouSavedHighlight';
@@ -10,7 +11,7 @@ import { Skeleton, EmptyState } from '@/components/ui';
 import { getCategoryIcon } from '@/utils/icons';
 import {
   TrendingUp, TrendingDown, BarChart3, Minus,
-  Flame, Share2, Check, ArrowLeft,
+  Flame, Share2, Check, ArrowLeft, Hash,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useUIStore } from '@/stores/uiStore';
@@ -25,6 +26,8 @@ export default function MonthlyReviewPage() {
   const [data, setData] = useState<Awaited<ReturnType<typeof transactionRepo.getMonthlyComparison>> | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryComparison, setCategoryComparison] = useState<{ categoryId: string; current: number; prev: number }[]>([]);
+  const [tagSpending, setTagSpending] = useState<{ tagId: string; total: number }[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [shared, setShared] = useState(false);
 
   useEffect(() => {
@@ -48,9 +51,11 @@ export default function MonthlyReviewPage() {
         end: new Date(prevYear, prevMonth + 1, 0, 23, 59, 59).getTime(),
       };
 
-      const [curByCat, prevByCat] = await Promise.all([
+      const [curByCat, prevByCat, tagList, curTagSpending] = await Promise.all([
         transactionRepo.getTotalByCategory(range.start, range.end),
         transactionRepo.getTotalByCategory(prevRange.start, prevRange.end),
+        tagRepo.getAll(),
+        tagRepo.getSpendingByTag(range.start, range.end),
       ]);
 
       const allIds = new Set([...curByCat.map((c) => c.categoryId), ...prevByCat.map((c) => c.categoryId)]);
@@ -61,6 +66,9 @@ export default function MonthlyReviewPage() {
           return { categoryId, current, prev };
         }),
       );
+
+      setTags(tagList);
+      setTagSpending(curTagSpending);
 
       setLoading(false);
     }
@@ -241,6 +249,36 @@ export default function MonthlyReviewPage() {
           )}
         </div>
       </div>
+
+      {tags.length > 0 && tagSpending.length > 0 && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-100">
+            <Hash className="h-4 w-4" />
+            Pengeluaran per Tag
+          </h3>
+          <div className="flex flex-col gap-2">
+            {(() => {
+              const tagMap = Object.fromEntries(tags.map((t) => [t.id, t]));
+              return [...tagSpending]
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 8)
+                .map(({ tagId, total }) => {
+                  const tag = tagMap[tagId];
+                  if (!tag) return null;
+                  return (
+                    <div key={tagId} className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full" style={{ backgroundColor: `${tag.color}20` }}>
+                        <Hash className="h-3 w-3" style={{ color: tag.color }} />
+                      </div>
+                      <span className="flex-1 text-xs text-neutral-700 dark:text-neutral-100">{tag.name}</span>
+                      <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(total)}</span>
+                    </div>
+                  );
+                });
+            })()}
+          </div>
+        </div>
+      )}
 
       {expenseByCat.length > 0 && (
         <div>

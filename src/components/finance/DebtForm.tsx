@@ -23,7 +23,7 @@ export function DebtForm({ open, onClose, editDebt, onSaved }: DebtFormProps) {
       if (editDebt) {
         setType(editDebt.type);
         setPersonName(editDebt.personName);
-        setAmount(String(editDebt.amount - editDebt.paidAmount));
+        setAmount(String(editDebt.amount));
         setDueDate(editDebt.dueDate ? new Date(editDebt.dueDate).toISOString().slice(0, 10) : '');
         setNotes(editDebt.notes ?? '');
       } else {
@@ -47,7 +47,7 @@ export function DebtForm({ open, onClose, editDebt, onSaved }: DebtFormProps) {
           type,
           personName: personName.trim(),
           amount: numAmount,
-          paidAmount: 0,
+          paidAmount: editDebt.paidAmount,
           dueDate: dueTs,
           notes: notes.trim() || undefined,
         });

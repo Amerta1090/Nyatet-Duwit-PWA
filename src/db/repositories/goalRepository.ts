@@ -137,7 +137,7 @@ export const goalRepo = {
       totalTarget += g.targetAmount;
       activeCount++;
     }
-    const totalCurrent = activeCount > 0 ? await this.getCurrentAmount(goals.find((g) => !g.achievedAt)!) : 0;
+    const totalCurrent = activeCount > 0 ? await this.getCurrentAmount(goals[0]!) : 0;
     return {
       totalTarget,
       totalCurrent,

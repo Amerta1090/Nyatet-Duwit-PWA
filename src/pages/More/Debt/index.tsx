@@ -18,11 +18,16 @@ export default function DebtPage() {
   const [editDebt, setEditDebt] = useState<Debt | null>(null);
   const [payDebt, setPayDebt] = useState<Debt | null>(null);
   const [payAmount, setPayAmount] = useState('');
+  const [upcomingDue, setUpcomingDue] = useState<Debt[]>([]);
   const { showToast } = useUIStore();
 
   async function loadData() {
-    const all = await debtRepo.getAll();
+    const [all, upcoming] = await Promise.all([
+      debtRepo.getAll(),
+      debtRepo.getUpcomingDue(3),
+    ]);
     setDebts(all);
+    setUpcomingDue(upcoming);
     setLoading(false);
   }
 
@@ -197,6 +202,14 @@ export default function DebtPage() {
           <div className="rounded-xl bg-danger-50 p-3 dark:bg-danger-500/10">
             <p className="text-xs font-medium text-danger-600 dark:text-danger-400">
               {overdueOwed.length} piutang dan {overdueOwing.length} utang lewat jatuh tempo
+            </p>
+          </div>
+        )}
+
+        {upcomingDue.length > 0 && overdueOwed.length === 0 && (
+          <div className="rounded-xl bg-amber-50 p-3 dark:bg-amber-500/10">
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              {upcomingDue.length} utang/piutang akan jatuh tempo dalam 3 hari
             </p>
           </div>
         )}

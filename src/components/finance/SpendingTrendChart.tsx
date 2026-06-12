@@ -62,6 +62,9 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
   const [dim, setDim] = useState({ w: 400, h: 0 });
   const [animPhase, setAnimPhase] = useState(0);
   const rafRef = useRef<number>(0);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartOffset = useRef(0);
   const height = 220;
 
   useEffect(() => {
@@ -228,7 +231,31 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
     setOffset(0);
   }, []);
 
-  const zoomLabel = zoom === 1 ? `${days}hr` : zoom === 3 ? `${Math.round(days / 3)}hr` : `${Math.round(days / 12)}hr`;
+  const totalPoints = points.length;
+  const maxOffset = 1 - 1 / zoom;
+
+  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (zoom === 1) return;
+    const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX;
+    isDragging.current = true;
+    dragStartX.current = clientX;
+    dragStartOffset.current = offset;
+  }, [zoom, offset]);
+
+  const handleDragMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging.current || zoom === 1) return;
+    const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX;
+    const dx = clientX - dragStartX.current;
+    const plotW = dim.w - PADDING.left - PADDING.right;
+    const offsetDelta = -(dx / plotW) * maxOffset;
+    setOffset(Math.max(0, Math.min(maxOffset, dragStartOffset.current + offsetDelta)));
+  }, [zoom, dim.w, maxOffset]);
+
+  const handleDragEnd = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  const zoomLabel = zoom === 1 ? `${days}h` : zoom === 3 ? `${Math.round(days / 3)}h` : `${Math.round(days / 12)}h`;
 
   if (data.length === 0) {
     return (
@@ -248,12 +275,18 @@ export function SpendingTrendChart({ data, compareData, dailyTopCategory, days =
         ref={svgRef}
         width={dim.w}
         height={dim.h}
-        className="overflow-visible transition-all duration-500"
         style={svgAnimStyle as React.CSSProperties}
-        onMouseMove={handleTap}
-        onTouchMove={handleTap}
-        onMouseLeave={() => setTooltip(null)}
+        onMouseMove={(e) => { if (!isDragging.current) handleTap(e); handleDragMove(e); }}
+        onTouchMove={(e) => { handleTap(e); handleDragMove(e); }}
+        onTouchStart={handleDragStart}
+        onMouseDown={handleDragStart}
+        onMouseUp={handleDragEnd}
+        onTouchEnd={handleDragEnd}
+        onMouseLeave={() => { setTooltip(null); handleDragEnd(); }}
         onWheel={handleWheel}
+        style={{ cursor: zoom > 1 ? 'grab' : 'default' }}
+        className="overflow-visible transition-all duration-500 select-none"
+        draggable={false}
       >
         <defs>
           <linearGradient id="trendGradient" x1="0" x2="0" y1="0" y2="1">

@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useWeeklySummary } from '@/hooks/useWeeklySummary';
+import { useAppLock } from '@/hooks/useAppLock';
 import { useAppStore } from '@/stores/appStore';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/stores/uiStore';
 import { backupRepo } from '@/db/repositories/backupRepository';
 import { Modal, Button } from '@/components/ui';
-import { Bell, BellOff, Sun, Moon, Database, Info, ChevronRight, Trash2, AlertTriangle, Calendar, Globe, DollarSign, BookOpen } from 'lucide-react';
+import { Bell, BellOff, Sun, Moon, Database, Info, ChevronRight, Trash2, AlertTriangle, Calendar, Globe, DollarSign, BookOpen, Lock, Fingerprint } from 'lucide-react';
 import { db } from '@/db/schema';
 import { cn } from '@/utils/cn';
 import { setShowDecimals } from '@/utils/format';
@@ -23,6 +24,14 @@ export default function SettingsPage() {
   const showDecimals = useAppStore((s) => s.showDecimals);
   const setShowDecimalsStore = useAppStore((s) => s.setShowDecimals);
   const [weeklySummaryEnabled, setWeeklySummaryEnabled] = useState(true);
+  const {
+    hasPin, lockTimer, biometricEnabled,
+    setPin, removePin, setLockTimer, setBiometricEnabled,
+  } = useAppLock();
+  const [pinModal, setPinModal] = useState<'set' | 'remove' | null>(null);
+  const [pinValue, setPinValue] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [pinError, setPinError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -140,6 +149,148 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Keamanan */}
+      <p className="mt-2 text-xs font-medium uppercase tracking-wider text-neutral-400">Keamanan</p>
+
+      <div className="rounded-xl bg-white p-4 dark:bg-neutral-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Lock className={cn('h-5 w-5', hasPin ? 'text-primary-500' : 'text-neutral-400')} />
+            <div>
+              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Kunci Aplikasi</p>
+              <p className="text-xs text-neutral-400">{hasPin ? 'PIN sudah diatur' : 'Belum diatur'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (hasPin) {
+                setPinModal('remove');
+              } else {
+                setPinModal('set');
+              }
+              setPinValue('');
+              setPinConfirm('');
+              setPinError('');
+            }}
+            className={`relative h-6 w-11 rounded-full transition-colors ${hasPin ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-neutral-600'}`}
+            role="switch"
+            aria-checked={hasPin}
+          >
+            <span
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasPin ? 'translate-x-5' : ''}`}
+            />
+          </button>
+        </div>
+
+        {hasPin && (
+          <div className="mt-3 flex items-center gap-3">
+            <label className="text-xs text-neutral-500">Kunci otomatis:</label>
+            <select
+              value={lockTimer / 60000}
+              onChange={(e) => setLockTimer(parseInt(e.target.value, 10))}
+              className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              <option value={0}>Tidak pernah</option>
+              <option value={1}>1 menit</option>
+              <option value={5}>5 menit</option>
+              <option value={15}>15 menit</option>
+              <option value={30}>30 menit</option>
+            </select>
+          </div>
+        )}
+
+        {hasPin && (
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Fingerprint className={cn('h-5 w-5', biometricEnabled ? 'text-primary-500' : 'text-neutral-400')} />
+              <div>
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Sidik Jari</p>
+                <p className="text-xs text-neutral-400">{biometricEnabled ? 'Aktif' : 'Nonaktif'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setBiometricEnabled(!biometricEnabled)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${biometricEnabled ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-neutral-600'}`}
+              role="switch"
+              aria-checked={biometricEnabled}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${biometricEnabled ? 'translate-x-5' : ''}`}
+              />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <Modal open={pinModal === 'set'} onClose={() => setPinModal(null)} title="Atur PIN">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-neutral-500">Masukkan PIN 6 digit untuk mengunci aplikasi.</p>
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="PIN 6 digit"
+            value={pinValue}
+            onChange={(e) => {
+              setPinValue(e.target.value.replace(/\D/g, '').slice(0, 6));
+              setPinError('');
+            }}
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-center text-lg tracking-widest dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+          />
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="Konfirmasi PIN"
+            value={pinConfirm}
+            onChange={(e) => {
+              setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 6));
+              setPinError('');
+            }}
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-center text-lg tracking-widest dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+          />
+          {pinError && <p className="text-xs text-danger-500">{pinError}</p>}
+          <Button
+            onClick={async () => {
+              if (pinValue.length !== 6) {
+                setPinError('PIN harus 6 digit');
+                return;
+              }
+              if (pinValue !== pinConfirm) {
+                setPinError('PIN tidak cocok');
+                return;
+              }
+              await setPin(pinValue);
+              setPinModal(null);
+              showToast('PIN berhasil diatur', 'success');
+            }}
+          >
+            Simpan PIN
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={pinModal === 'remove'} onClose={() => setPinModal(null)} title="Hapus PIN">
+        <div className="flex flex-col gap-4">
+          <AlertTriangle className="h-6 w-6 text-danger-500" />
+          <p className="text-sm text-neutral-500">Hapus PIN kunci aplikasi? Aplikasi tidak akan terkunci lagi.</p>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setPinModal(null)} className="flex-1">Batal</Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                removePin();
+                setPinModal(null);
+                showToast('PIN dihapus', 'info');
+              }}
+              className="flex-1"
+            >
+              Hapus
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Notifikasi */}
       <p className="mt-2 text-xs font-medium uppercase tracking-wider text-neutral-400">Notifikasi</p>

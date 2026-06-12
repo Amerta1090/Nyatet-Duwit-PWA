@@ -76,4 +76,11 @@ export const debtRepo = {
     ]);
     return owed - owing;
   },
+
+  async getUpcomingDue(days: number = 3): Promise<Debt[]> {
+    const all = await db.debts.toArray();
+    const now = Date.now();
+    const deadline = now + days * 86400000;
+    return all.filter((d) => d.dueDate && d.dueDate > now && d.dueDate <= deadline && d.paidAmount < d.amount);
+  },
 };

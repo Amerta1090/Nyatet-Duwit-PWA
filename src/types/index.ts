@@ -22,6 +22,7 @@ export interface Transaction {
   date: number;
   notes?: string;
   tags?: string[];
+  goalId?: string;
   isRecurring?: boolean;
   recurringId?: string;
   sortOrder?: number;
