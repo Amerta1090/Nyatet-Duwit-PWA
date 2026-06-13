@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/stores/appStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useNotifications } from '@/hooks/useNotifications';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { accountRepo } from '@/db/repositories/accountRepository';
@@ -55,6 +56,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalId, setGoalId] = useState<string | null>(null);
+  const { trackRecording } = useNotifications();
 
   const amountRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
@@ -162,6 +164,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
     if (!isValid || saving) return;
     setSaving(true);
     const fullDate = combineDateAndTime(date, time);
+    const hour = new Date(fullDate).getHours();
     try {
       if (editId) {
         await transactionRepo.update(editId, {
@@ -179,6 +182,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
         updateLastUsed(categoryId!, accountId!, type);
         vibrate(10);
         showToast('Perubahan tersimpan', 'success');
+        trackRecording(hour);
         onClose();
       } else {
         const transaction = await transactionRepo.create({
@@ -201,6 +205,7 @@ export function TransactionForm({ open, onClose, editId, prefill }: TransactionF
           showToast('Transaksi dibatalkan', 'info');
         });
 
+        trackRecording(hour);
         onClose();
       }
     } catch {

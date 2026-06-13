@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import type { Transaction } from '@/types';
 import { generateId } from '@/utils/id';
+import { encryptTransaction, decryptTransaction, decryptTransactions } from '../encryptionMiddleware';
 
 export interface CreateTransactionInput {
   type: 'income' | 'expense' | 'transfer';
@@ -29,7 +30,7 @@ export const transactionRepo = {
   async create(input: CreateTransactionInput): Promise<Transaction> {
     return db.transaction('rw', db.transactions, db.accounts, async () => {
       const now = Date.now();
-      const transaction: Transaction = {
+      const rawTx: Transaction = {
         id: generateId(),
         ...input,
         isRecurring: false,
@@ -39,7 +40,8 @@ export const transactionRepo = {
         synced: false,
       };
 
-      await db.transactions.add(transaction);
+      const encrypted = await encryptTransaction(rawTx);
+      await db.transactions.add(encrypted as Transaction);
 
       const account = await db.accounts.get(input.accountId);
       if (account) {
@@ -54,12 +56,14 @@ export const transactionRepo = {
         }
       }
 
-      return transaction;
+      return rawTx;
     });
   },
 
   async getById(id: string): Promise<Transaction | undefined> {
-    return db.transactions.get(id);
+    const tx = await db.transactions.get(id);
+    if (!tx) return undefined;
+    return decryptTransaction(tx);
   },
 
   async getAll(options?: GetAllOptions): Promise<Transaction[]> {
@@ -101,11 +105,13 @@ export const transactionRepo = {
       return (b.sortOrder ?? b.createdAt) - (a.sortOrder ?? a.createdAt);
     });
 
+    const decrypted = await decryptTransactions(results);
+
     if (options?.limit) {
-      return results.slice(0, options.limit);
+      return decrypted.slice(0, options.limit);
     }
 
-    return results;
+    return decrypted;
   },
 
   async getByDateRange(from: number, to: number): Promise<Transaction[]> {
@@ -121,7 +127,7 @@ export const transactionRepo = {
       return (b.sortOrder ?? b.createdAt) - (a.sortOrder ?? a.createdAt);
     });
 
-    return txs;
+    return decryptTransactions(txs);
   },
 
   async getByMonth(year: number, month: number): Promise<Transaction[]> {
@@ -134,10 +140,11 @@ export const transactionRepo = {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
     const all = await db.transactions.toArray();
+    const decrypted = await decryptTransactions(all);
     const categoryIdsByName = categories
       ? categories.filter((c) => c.name.toLowerCase().includes(q)).map((c) => c.id)
       : [];
-    return all.filter(
+    return decrypted.filter(
       (t) =>
         t.notes?.toLowerCase().includes(q) ||
         String(t.amount).includes(q) ||
@@ -149,21 +156,22 @@ export const transactionRepo = {
     return db.transaction('rw', db.transactions, db.accounts, async () => {
       const old = await db.transactions.get(id);
       if (!old) throw new Error('Transaction not found');
+      const oldDecrypted = await decryptTransaction(old);
 
       const now = Date.now();
 
       if (data.amount !== undefined || data.type !== undefined || data.accountId !== undefined || data.toAccountId !== undefined) {
-        if (old.type !== 'transfer') {
-          const oldAccount = await db.accounts.get(old.accountId);
+        if (oldDecrypted.type !== 'transfer') {
+          const oldAccount = await db.accounts.get(oldDecrypted.accountId);
           if (oldAccount) {
-            const reversal = old.type === 'income' ? -old.amount : old.amount;
-            await db.accounts.update(old.accountId, { balance: oldAccount.balance + reversal, updatedAt: now });
+            const reversal = oldDecrypted.type === 'income' ? -oldDecrypted.amount : oldDecrypted.amount;
+            await db.accounts.update(oldDecrypted.accountId, { balance: oldAccount.balance + reversal, updatedAt: now });
           }
         }
 
-        const newType = data.type || old.type;
-        const newAccountId = data.accountId || old.accountId;
-        const newAmount = data.amount ?? old.amount;
+        const newType = data.type || oldDecrypted.type;
+        const newAccountId = data.accountId || oldDecrypted.accountId;
+        const newAmount = data.amount ?? oldDecrypted.amount;
 
         if (newType !== 'transfer') {
           const newAccount = await db.accounts.get(newAccountId);
@@ -174,10 +182,11 @@ export const transactionRepo = {
         }
       }
 
-      await db.transactions.update(id, { ...data, updatedAt: now });
+      const encryptedData = await encryptTransaction(data);
+      await db.transactions.update(id, { ...encryptedData, updatedAt: now });
       const updated = await db.transactions.get(id);
       if (!updated) throw new Error('Transaction not found after update');
-      return updated;
+      return decryptTransaction(updated);
     });
   },
 
@@ -185,23 +194,24 @@ export const transactionRepo = {
     return db.transaction('rw', db.transactions, db.accounts, async () => {
       const old = await db.transactions.get(id);
       if (!old) return;
+      const oldDecrypted = await decryptTransaction(old);
 
       const now = Date.now();
 
-      if (old.type === 'transfer') {
-        const srcAccount = await db.accounts.get(old.accountId);
+      if (oldDecrypted.type === 'transfer') {
+        const srcAccount = await db.accounts.get(oldDecrypted.accountId);
         if (srcAccount) {
-          await db.accounts.update(old.accountId, { balance: srcAccount.balance + old.amount, updatedAt: now });
+          await db.accounts.update(oldDecrypted.accountId, { balance: srcAccount.balance + oldDecrypted.amount, updatedAt: now });
         }
-        const dstAccount = old.toAccountId ? await db.accounts.get(old.toAccountId) : undefined;
+        const dstAccount = oldDecrypted.toAccountId ? await db.accounts.get(oldDecrypted.toAccountId) : undefined;
         if (dstAccount) {
-          await db.accounts.update(old.toAccountId!, { balance: dstAccount.balance - old.amount, updatedAt: now });
+          await db.accounts.update(oldDecrypted.toAccountId!, { balance: dstAccount.balance - oldDecrypted.amount, updatedAt: now });
         }
       } else {
-        const account = await db.accounts.get(old.accountId);
+        const account = await db.accounts.get(oldDecrypted.accountId);
         if (account) {
-          const delta = old.type === 'income' ? -old.amount : old.amount;
-          await db.accounts.update(old.accountId, { balance: account.balance + delta, updatedAt: now });
+          const delta = oldDecrypted.type === 'income' ? -oldDecrypted.amount : oldDecrypted.amount;
+          await db.accounts.update(oldDecrypted.accountId, { balance: account.balance + delta, updatedAt: now });
         }
       }
 
@@ -284,6 +294,8 @@ export const transactionRepo = {
       .between(startDate, endDate, true, true)
       .toArray();
 
+    const decrypted = await decryptTransactions(allTxs);
+
     const monthIndex = (ts: number) => {
       const d = new Date(ts);
       return d.getFullYear() * 12 + d.getMonth();
@@ -296,7 +308,7 @@ export const transactionRepo = {
       grouped.set(i, { income: 0, expense: 0 });
     }
 
-    for (const tx of allTxs) {
+    for (const tx of decrypted) {
       const idx = monthIndex(tx.date);
       const bucket = grouped.get(idx);
       if (bucket) {
@@ -365,8 +377,9 @@ export const transactionRepo = {
       .where('date')
       .above(Date.now() - 30 * 86400000)
       .toArray();
+    const decrypted30 = await decryptTransactions(allTxs30);
     const activeDays = new Set<number>();
-    for (const tx of allTxs30) {
+    for (const tx of decrypted30) {
       activeDays.add(tx.date);
     }
     const sortedDays = Array.from(activeDays).sort((a, b) => b - a);

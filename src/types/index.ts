@@ -29,6 +29,8 @@ export interface Transaction {
   createdAt: number;
   updatedAt: number;
   synced: boolean;
+  _encAmount?: string;
+  _encNotes?: string;
 }
 
 export interface Category {
@@ -83,6 +85,8 @@ export interface Debt {
   notes?: string;
   createdAt: number;
   updatedAt: number;
+  _encPersonName?: string;
+  _encNotes?: string;
 }
 
 export interface Tag {

@@ -3,11 +3,12 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useWeeklySummary } from '@/hooks/useWeeklySummary';
 import { useAppLock } from '@/hooks/useAppLock';
 import { useAppStore } from '@/stores/appStore';
+import { useEncryptionStore } from '@/stores/encryptionStore';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/stores/uiStore';
 import { backupRepo } from '@/db/repositories/backupRepository';
 import { Modal, Button } from '@/components/ui';
-import { Bell, BellOff, Sun, Moon, Database, Info, ChevronRight, Trash2, AlertTriangle, Calendar, Globe, DollarSign, BookOpen, Lock, Fingerprint } from 'lucide-react';
+import { Bell, BellOff, Sun, Moon, Database, Info, ChevronRight, Trash2, AlertTriangle, Calendar, Globe, DollarSign, BookOpen, Lock, Fingerprint, Shield, ShieldOff } from 'lucide-react';
 import { db } from '@/db/schema';
 import { cn } from '@/utils/cn';
 import { setShowDecimals } from '@/utils/format';
@@ -15,7 +16,7 @@ import { setShowDecimals } from '@/utils/format';
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { showToast } = useUIStore();
-  const { permission, enabled, hour, minute, setHour, setMinute, toggle } = useNotifications();
+  const { permission, enabled, hour, minute, setHour, setMinute, toggle, smart, peakHour, setSmart } = useNotifications();
   const { scheduleWeeklySummary, clearWeeklySummary } = useWeeklySummary();
   const darkMode = useAppStore((s) => s.darkMode);
   const toggleDarkMode = useAppStore((s) => s.toggleDarkMode);
@@ -28,10 +29,17 @@ export default function SettingsPage() {
     hasPin, lockTimer, biometricEnabled,
     setPin, removePin, setLockTimer, setBiometricEnabled,
   } = useAppLock();
+  const encryptionEnabled = useEncryptionStore((s) => s.enabled);
+  const encryptionAvailable = useEncryptionStore((s) => s.isAvailable);
+  const encryptionLoading = useEncryptionStore((s) => s.loading);
+  const enableEncryption = useEncryptionStore((s) => s.enable);
+  const disableEncryption = useEncryptionStore((s) => s.disable);
   const [pinModal, setPinModal] = useState<'set' | 'remove' | null>(null);
   const [pinValue, setPinValue] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
+  const [encryptionConfirm, setEncryptionConfirm] = useState(false);
+  const [encryptionBusy, setEncryptionBusy] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -292,6 +300,83 @@ export default function SettingsPage() {
         </div>
       </Modal>
 
+      {encryptionAvailable && (
+        <div className="rounded-xl bg-white p-4 dark:bg-neutral-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {encryptionEnabled ? <Shield className="h-5 w-5 text-primary-500" /> : <ShieldOff className="h-5 w-5 text-neutral-400" />}
+              <div>
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Enkripsi Data</p>
+                <p className="text-xs text-neutral-400">
+                  {encryptionLoading ? 'Memeriksa...' : encryptionEnabled ? 'Aktif (AES-256-GCM)' : 'Nonaktif'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (encryptionEnabled) {
+                  setEncryptionConfirm(true);
+                } else {
+                  setEncryptionBusy(true);
+                  enableEncryption(hasPin)
+                    .then(() => showToast('Enkripsi data diaktifkan', 'success'))
+                    .catch(() => showToast('Gagal mengaktifkan enkripsi', 'error'))
+                    .finally(() => setEncryptionBusy(false));
+                }
+              }}
+              disabled={encryptionLoading || encryptionBusy}
+              className={`relative h-6 w-11 rounded-full transition-colors ${encryptionEnabled ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-neutral-600'}`}
+              role="switch"
+              aria-checked={encryptionEnabled}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${encryptionEnabled ? 'translate-x-5' : ''}`}
+              />
+            </button>
+          </div>
+          {encryptionEnabled && (
+            <p className="mt-2 text-[11px] text-accent-600 dark:text-accent-400">
+              Data sensitif (jumlah, catatan, nama) dienkripsi dengan AES-256-GCM.
+            </p>
+          )}
+          {!encryptionEnabled && !encryptionLoading && (
+            <p className="mt-2 text-[11px] text-neutral-400">
+              Enkripsi data di perangkat menggunakan Web Crypto API. Kunci diturunkan dari PIN aplikasi.
+            </p>
+          )}
+        </div>
+      )}
+
+      <Modal open={encryptionConfirm} onClose={() => setEncryptionConfirm(false)} title="Nonaktifkan Enkripsi?">
+        <div className="flex flex-col gap-4">
+          <AlertTriangle className="h-6 w-6 text-amber-500" />
+          <p className="text-sm text-neutral-500">
+            Menonaktifkan enkripsi akan mendekripsi semua data. Pastikan data kamu aman sebelum melanjutkan.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setEncryptionConfirm(false)} className="flex-1">Batal</Button>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                setEncryptionBusy(true);
+                try {
+                  await disableEncryption();
+                  showToast('Enkripsi data dinonaktifkan', 'info');
+                } catch {
+                  showToast('Gagal menonaktifkan enkripsi', 'error');
+                }
+                setEncryptionBusy(false);
+                setEncryptionConfirm(false);
+              }}
+              disabled={encryptionBusy}
+              className="flex-1"
+            >
+              {encryptionBusy ? 'Memproses...' : 'Nonaktifkan'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Notifikasi */}
       <p className="mt-2 text-xs font-medium uppercase tracking-wider text-neutral-400">Notifikasi</p>
 
@@ -319,32 +404,61 @@ export default function SettingsPage() {
         </div>
 
         {enabled && (
-          <div className="mt-4 flex items-center gap-3">
-            <label className="text-xs text-neutral-500">Jam:</label>
-            <select
-              value={hour}
-              onChange={(e) => setHour(parseInt(e.target.value, 10))}
-              className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-            >
-              {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={i}>
-                  {String(i).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs text-neutral-400">:</span>
-            <select
-              value={minute}
-              onChange={(e) => setMinute(parseInt(e.target.value, 10))}
-              className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-            >
-              {[0, 15, 30, 45].map((m) => (
-                <option key={m} value={m}>
-                  {String(m).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="mt-4 flex items-center gap-3">
+              <label className="text-xs text-neutral-500">Jam:</label>
+              <select
+                value={smart && peakHour !== null ? peakHour : hour}
+                onChange={(e) => setHour(parseInt(e.target.value, 10))}
+                disabled={smart && peakHour !== null}
+                className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 disabled:opacity-50"
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {String(i).padStart(2, '0')}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-neutral-400">:</span>
+              <select
+                value={minute}
+                onChange={(e) => setMinute(parseInt(e.target.value, 10))}
+                className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-sm dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+              >
+                {[0, 15, 30, 45].map((m) => (
+                  <option key={m} value={m}>
+                    {String(m).padStart(2, '0')}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700">
+                  <Calendar className="h-3 w-3 text-neutral-500" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-100">Pintar (Smart)</p>
+                  <p className="text-[10px] text-neutral-400">
+                    {smart && peakHour !== null
+                      ? `Notifikasi pukul ${String(peakHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+                      : smart ? 'Belum cukup data (min 3 transaksi)' : 'Nonaktif'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSmart(!smart)}
+                className={`relative h-6 w-11 rounded-full transition-colors ${smart ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-neutral-600'}`}
+                role="switch"
+                aria-checked={smart}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${smart ? 'translate-x-5' : ''}`}
+                />
+              </button>
+            </div>
+          </>
         )}
 
         {permission === 'denied' && (

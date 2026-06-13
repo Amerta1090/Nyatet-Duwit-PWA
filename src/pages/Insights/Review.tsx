@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { tagRepo } from '@/db/repositories/tagRepository';
-import type { Category, Tag } from '@/types';
+import { goalRepo } from '@/db/repositories/goalRepository';
+import { debtRepo } from '@/db/repositories/debtRepository';
+import { emergencyFundRepo } from '@/db/repositories/emergencyFundRepository';
+import type { Category, Tag, Goal, Debt } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { getMonthLabel, getDayLabel } from '@/utils/date';
 import { YouSavedHighlight } from '@/components/finance/YouSavedHighlight';
@@ -12,6 +15,7 @@ import { getCategoryIcon } from '@/utils/icons';
 import {
   TrendingUp, TrendingDown, BarChart3, Minus,
   Flame, Share2, Check, ArrowLeft, Hash,
+  Target, Wallet, Shield,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useUIStore } from '@/stores/uiStore';
@@ -29,6 +33,9 @@ export default function MonthlyReviewPage() {
   const [tagSpending, setTagSpending] = useState<{ tagId: string; total: number }[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [shared, setShared] = useState(false);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [efund, setEfund] = useState<{ current: number; target: number; percent: number } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -51,11 +58,14 @@ export default function MonthlyReviewPage() {
         end: new Date(prevYear, prevMonth + 1, 0, 23, 59, 59).getTime(),
       };
 
-      const [curByCat, prevByCat, tagList, curTagSpending] = await Promise.all([
+      const [curByCat, prevByCat, tagList, curTagSpending, allGoals, allDebts, ef] = await Promise.all([
         transactionRepo.getTotalByCategory(range.start, range.end),
         transactionRepo.getTotalByCategory(prevRange.start, prevRange.end),
         tagRepo.getAll(),
         tagRepo.getSpendingByTag(range.start, range.end),
+        goalRepo.getAll(),
+        debtRepo.getAll(),
+        emergencyFundRepo.getProgress(),
       ]);
 
       const allIds = new Set([...curByCat.map((c) => c.categoryId), ...prevByCat.map((c) => c.categoryId)]);
@@ -69,6 +79,9 @@ export default function MonthlyReviewPage() {
 
       setTags(tagList);
       setTagSpending(curTagSpending);
+      setGoals(allGoals);
+      setDebts(allDebts);
+      setEfund(ef);
 
       setLoading(false);
     }
@@ -276,6 +289,105 @@ export default function MonthlyReviewPage() {
                   );
                 });
             })()}
+          </div>
+        </div>
+      )}
+
+      {goals.filter((g) => g.target > 0).length > 0 && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-100">
+            <Target className="h-4 w-4" />
+            Ringkasan Tujuan
+          </h3>
+          <div className="flex flex-col gap-2">
+            {(() => {
+              const active = goals.filter((g) => g.target > 0);
+              const avgProgress = active.reduce((s, g) => {
+                const pct = g.target > 0 ? Math.min((g.current / g.target) * 100, 100) : 0;
+                return s + pct;
+              }, 0) / active.length;
+              const totalSaved = active.reduce((s, g) => s + g.current, 0);
+              const totalTarget = active.reduce((s, g) => s + g.target, 0);
+              return (
+                <>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                    <span className="text-xs text-neutral-500">Tujuan Aktif</span>
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{active.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                    <span className="text-xs text-neutral-500">Rata-rata Progres</span>
+                    <span className="text-xs font-semibold text-accent-500">{avgProgress.toFixed(0)}%</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                    <span className="text-xs text-neutral-500">Total Terkumpul</span>
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(totalSaved)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                    <span className="text-xs text-neutral-500">Total Target</span>
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(totalTarget)}</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {debts.length > 0 && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-100">
+            <Wallet className="h-4 w-4" />
+            Ringkasan Hutang
+          </h3>
+          <div className="flex flex-col gap-2">
+            {(() => {
+              const totalOwe = debts.filter((d) => d.type === 'owe').reduce((s, d) => s + d.amount, 0);
+              const totalOwed = debts.filter((d) => d.type === 'owed').reduce((s, d) => s + d.amount, 0);
+              const overdue = debts.filter((d) => d.dueDate && d.dueDate < Date.now() && d.amount > 0).length;
+              return (
+                <>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                    <span className="text-xs text-neutral-500">Total Hutang</span>
+                    <span className="text-xs font-semibold text-danger-500">{formatCurrency(totalOwe)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                    <span className="text-xs text-neutral-500">Total Piutang</span>
+                    <span className="text-xs font-semibold text-accent-500">{formatCurrency(totalOwed)}</span>
+                  </div>
+                  {overdue > 0 && (
+                    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+                      <span className="text-xs text-neutral-500">Jatuh Tempo</span>
+                      <span className="text-xs font-semibold text-danger-500">{overdue}</span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {efund && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-100">
+            <Shield className="h-4 w-4" />
+            Dana Darurat
+          </h3>
+          <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-neutral-800">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs text-neutral-500">Progres</span>
+              <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{efund.percent}%</span>
+            </div>
+            <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+              <div
+                className="h-full rounded-full bg-accent-500 transition-all"
+                style={{ width: `${Math.min(efund.percent, 100)}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-400">{formatCurrency(efund.current)}</span>
+              <span className="text-neutral-400">Target {formatCurrency(efund.target)}</span>
+            </div>
           </div>
         </div>
       )}

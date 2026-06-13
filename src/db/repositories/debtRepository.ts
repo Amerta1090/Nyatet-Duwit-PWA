@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import type { Debt } from '@/types';
 import { generateId } from '@/utils/id';
+import { encryptDebt, decryptDebt, decryptDebts } from '../encryptionMiddleware';
 
 export interface CreateDebtInput {
   type: 'owed' | 'owing';
@@ -13,16 +14,19 @@ export interface CreateDebtInput {
 
 export const debtRepo = {
   async getAll(): Promise<Debt[]> {
-    return db.debts.toArray();
+    const debts = await db.debts.toArray();
+    return decryptDebts(debts);
   },
 
   async getById(id: string): Promise<Debt | undefined> {
-    return db.debts.get(id);
+    const debt = await db.debts.get(id);
+    if (!debt) return undefined;
+    return decryptDebt(debt);
   },
 
   async create(input: CreateDebtInput): Promise<Debt> {
     const now = Date.now();
-    const debt: Debt = {
+    const rawDebt: Debt = {
       id: generateId(),
       type: input.type,
       personName: input.personName,
@@ -33,16 +37,19 @@ export const debtRepo = {
       createdAt: now,
       updatedAt: now,
     };
-    await db.debts.add(debt);
-    return debt;
+
+    const encrypted = await encryptDebt(rawDebt);
+    await db.debts.add(encrypted as Debt);
+    return rawDebt;
   },
 
   async update(id: string, data: Partial<Debt>): Promise<Debt> {
-    const updateData = { ...data, updatedAt: Date.now() };
+    const encryptedData = await encryptDebt(data);
+    const updateData = { ...encryptedData, updatedAt: Date.now() };
     await db.debts.update(id, updateData);
     const updated = await db.debts.get(id);
     if (!updated) throw new Error('Debt not found');
-    return updated;
+    return decryptDebt(updated);
   },
 
   async delete(id: string): Promise<void> {
@@ -50,13 +57,15 @@ export const debtRepo = {
   },
 
   async getByType(type: 'owed' | 'owing'): Promise<Debt[]> {
-    return db.debts.where('type').equals(type).toArray();
+    const debts = await db.debts.where('type').equals(type).toArray();
+    return decryptDebts(debts);
   },
 
   async getOverdue(): Promise<Debt[]> {
     const all = await db.debts.toArray();
+    const decrypted = await decryptDebts(all);
     const now = Date.now();
-    return all.filter((d) => d.dueDate && d.dueDate < now && d.paidAmount < d.amount);
+    return decrypted.filter((d) => d.dueDate && d.dueDate < now && d.paidAmount < d.amount);
   },
 
   async getTotalOwed(): Promise<number> {
@@ -79,8 +88,9 @@ export const debtRepo = {
 
   async getUpcomingDue(days: number = 3): Promise<Debt[]> {
     const all = await db.debts.toArray();
+    const decrypted = await decryptDebts(all);
     const now = Date.now();
     const deadline = now + days * 86400000;
-    return all.filter((d) => d.dueDate && d.dueDate > now && d.dueDate <= deadline && d.paidAmount < d.amount);
+    return decrypted.filter((d) => d.dueDate && d.dueDate > now && d.dueDate <= deadline && d.paidAmount < d.amount);
   },
 };

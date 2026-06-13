@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { useWeeklySummary } from '@/hooks/useWeeklySummary';
+import { useEncryptionStore } from '@/stores/encryptionStore';
 import { InstallPrompt } from '@/components/pwa';
 import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
@@ -50,6 +51,7 @@ function AppContent() {
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const darkMode = useAppStore((s) => s.darkMode);
   const { scheduleWeeklySummary } = useWeeklySummary();
+  const initEncryption = useEncryptionStore((s) => s.init);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
@@ -58,8 +60,9 @@ function AppContent() {
   useEffect(() => {
     if (ready) {
       scheduleWeeklySummary();
+      initEncryption();
     }
-  }, [ready, scheduleWeeklySummary]);
+  }, [ready, scheduleWeeklySummary, initEncryption]);
 
   const handleAddTransaction = useCallback(() => {
     setEditTx(null);
