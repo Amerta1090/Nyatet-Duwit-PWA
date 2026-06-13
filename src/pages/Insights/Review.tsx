@@ -33,7 +33,7 @@ export default function MonthlyReviewPage() {
   const [tagSpending, setTagSpending] = useState<{ tagId: string; total: number }[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [shared, setShared] = useState(false);
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalProgress, setGoalProgress] = useState<{ totalTarget: number; totalCurrent: number; totalPercent: number; goalCount: number } | null>(null);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [efund, setEfund] = useState<{ current: number; target: number; percent: number } | null>(null);
 
@@ -58,12 +58,12 @@ export default function MonthlyReviewPage() {
         end: new Date(prevYear, prevMonth + 1, 0, 23, 59, 59).getTime(),
       };
 
-      const [curByCat, prevByCat, tagList, curTagSpending, allGoals, allDebts, ef] = await Promise.all([
+      const [curByCat, prevByCat, tagList, curTagSpending, gp, allDebts, ef] = await Promise.all([
         transactionRepo.getTotalByCategory(range.start, range.end),
         transactionRepo.getTotalByCategory(prevRange.start, prevRange.end),
         tagRepo.getAll(),
         tagRepo.getSpendingByTag(range.start, range.end),
-        goalRepo.getAll(),
+        goalRepo.getTotalProgress(),
         debtRepo.getAll(),
         emergencyFundRepo.getProgress(),
       ]);
@@ -79,7 +79,7 @@ export default function MonthlyReviewPage() {
 
       setTags(tagList);
       setTagSpending(curTagSpending);
-      setGoals(allGoals);
+      setGoalProgress(gp);
       setDebts(allDebts);
       setEfund(ef);
 
@@ -293,42 +293,29 @@ export default function MonthlyReviewPage() {
         </div>
       )}
 
-      {goals.filter((g) => g.target > 0).length > 0 && (
+      {goalProgress && goalProgress.goalCount > 0 && (
         <div>
           <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-100">
             <Target className="h-4 w-4" />
             Ringkasan Tujuan
           </h3>
           <div className="flex flex-col gap-2">
-            {(() => {
-              const active = goals.filter((g) => g.target > 0);
-              const avgProgress = active.reduce((s, g) => {
-                const pct = g.target > 0 ? Math.min((g.current / g.target) * 100, 100) : 0;
-                return s + pct;
-              }, 0) / active.length;
-              const totalSaved = active.reduce((s, g) => s + g.current, 0);
-              const totalTarget = active.reduce((s, g) => s + g.target, 0);
-              return (
-                <>
-                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
-                    <span className="text-xs text-neutral-500">Tujuan Aktif</span>
-                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{active.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
-                    <span className="text-xs text-neutral-500">Rata-rata Progres</span>
-                    <span className="text-xs font-semibold text-accent-500">{avgProgress.toFixed(0)}%</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
-                    <span className="text-xs text-neutral-500">Total Terkumpul</span>
-                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(totalSaved)}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
-                    <span className="text-xs text-neutral-500">Total Target</span>
-                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(totalTarget)}</span>
-                  </div>
-                </>
-              );
-            })()}
+            <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+              <span className="text-xs text-neutral-500">Tujuan Aktif</span>
+              <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{goalProgress.goalCount}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+              <span className="text-xs text-neutral-500">Progres Keseluruhan</span>
+              <span className="text-xs font-semibold text-accent-500">{goalProgress.totalPercent}%</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+              <span className="text-xs text-neutral-500">Total Terkumpul</span>
+              <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(goalProgress.totalCurrent)}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm dark:bg-neutral-800">
+              <span className="text-xs text-neutral-500">Total Target</span>
+              <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(goalProgress.totalTarget)}</span>
+            </div>
           </div>
         </div>
       )}
@@ -341,7 +328,7 @@ export default function MonthlyReviewPage() {
           </h3>
           <div className="flex flex-col gap-2">
             {(() => {
-              const totalOwe = debts.filter((d) => d.type === 'owe').reduce((s, d) => s + d.amount, 0);
+              const totalOwe = debts.filter((d) => d.type === 'owing').reduce((s, d) => s + d.amount, 0);
               const totalOwed = debts.filter((d) => d.type === 'owed').reduce((s, d) => s + d.amount, 0);
               const overdue = debts.filter((d) => d.dueDate && d.dueDate < Date.now() && d.amount > 0).length;
               return (

@@ -26,7 +26,7 @@ export async function deriveKeyFromPin(pin: string, salt?: Uint8Array): Promise<
   const encoder = new TextEncoder();
   const keyMaterial = await c.subtle.importKey('raw', encoder.encode(pin), 'PBKDF2', false, ['deriveKey']);
   const key = await c.subtle.deriveKey(
-    { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: saltBytes.buffer as ArrayBuffer, iterations: ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: ALGORITHM, length: KEY_LENGTH },
     false,

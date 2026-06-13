@@ -72,17 +72,7 @@ export const useEncryptionStore = create<EncryptionState>((set, get) => ({
     set({ enabled: false, key: null, keyExported: null });
   },
 
-  reEncryptAll: async (oldKey, newKey) => {
-    const { enabled } = get();
-    if (!enabled || !newKey) return;
-
-    const txs = await db.transactions.toArray();
-    for (const tx of txs) {
-      const update: Record<string, string | number | undefined> = {};
-      if (tx._encAmount && oldKey) {
-        const decrypted = tx._encAmount ? await import('@/utils/encryption').then((m) => m.decryptNumber(tx._encAmount!, oldKey)) : tx.amount;
-      }
-    }
+  reEncryptAll: async (_oldKey, _newKey) => {
   },
 
   setKey: (key) => set({ key }),
