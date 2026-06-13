@@ -18,7 +18,7 @@ interface EncryptionState {
   setKey: (key: CryptoKey | null) => void;
 }
 
-export const useEncryptionStore = create<EncryptionState>((set, get) => ({
+export const useEncryptionStore = create<EncryptionState>((set) => ({
   enabled: false,
   key: null,
   keyExported: null,

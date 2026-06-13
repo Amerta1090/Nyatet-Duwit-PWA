@@ -6,7 +6,7 @@ import { tagRepo } from '@/db/repositories/tagRepository';
 import { goalRepo } from '@/db/repositories/goalRepository';
 import { debtRepo } from '@/db/repositories/debtRepository';
 import { emergencyFundRepo } from '@/db/repositories/emergencyFundRepository';
-import type { Category, Tag, Goal, Debt } from '@/types';
+import type { Category, Tag, Debt } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import { getMonthLabel, getDayLabel } from '@/utils/date';
 import { YouSavedHighlight } from '@/components/finance/YouSavedHighlight';
