@@ -1,4 +1,7 @@
 {
   "version": "0.0.0",
-  "buildTime": "2026-06-13T01:37:42.799Z"
+  "buildTime": "2026-06-15T02:17:45.515Z",
+  "changelog": "# Changelog\n## [1.5.0] - 2026-05-28\n### Added\n- Onboarding v2: 3 swipeable intro screens + setup wizard (language, account name, category selection, reminder time)\n- Language toggle (Indonesia / English) — stored in settings, consumed via `useI18n` hook\n- Number format toggle — show/hide decimals in currency display\n- Open source licenses link in Settings\n### Changed\n- Settings page reorganized with new sections for language and number format\n- Default accounts and categories are now configurable during first-run setup",
+  "forceUpdate": false,
+  "downloadUrl": ""
 }

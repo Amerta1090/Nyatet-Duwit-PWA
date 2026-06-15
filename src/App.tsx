@@ -5,6 +5,7 @@ import { useDeepLink } from '@/hooks/useDeepLink';
 import { useWeeklySummary } from '@/hooks/useWeeklySummary';
 import { useEncryptionStore } from '@/stores/encryptionStore';
 import { InstallPrompt } from '@/components/pwa';
+import { WhatsNewModal } from '@/components/pwa/WhatsNewModal';
 import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
 import { TransactionForm } from '@/components/finance/TransactionForm';
@@ -34,6 +35,7 @@ const GoalsPage = lazy(() => import('@/pages/More/Goals'));
 const EmergencyFundPage = lazy(() => import('@/pages/More/EmergencyFund'));
 const DebtPage = lazy(() => import('@/pages/More/Debt'));
 const TagsPage = lazy(() => import('@/pages/More/Tags'));
+const TransferHistoryPage = lazy(() => import('@/pages/More/TransferHistory'));
 const OnboardingPage = lazy(() => import('@/pages/Onboarding'));
 
 function PageLoader() {
@@ -64,14 +66,24 @@ function AppContent() {
     }
   }, [ready, scheduleWeeklySummary, initEncryption]);
 
+  const [prefillCategory, setPrefillCategory] = useState<string | null>(null);
+
   const handleAddTransaction = useCallback(() => {
     setEditTx(null);
+    setPrefillCategory(null);
+    setFormOpen(true);
+  }, []);
+
+  const handleAddWithCategory = useCallback((categoryId: string) => {
+    setEditTx(null);
+    setPrefillCategory(categoryId);
     setFormOpen(true);
   }, []);
 
   const handleFormClose = useCallback(() => {
     setFormOpen(false);
     setEditTx(null);
+    setPrefillCategory(null);
   }, []);
 
   const navigate = useNavigate();
@@ -96,7 +108,7 @@ function AppContent() {
     }
   }, [ready, navigate]);
 
-  useDeepLink({ onAddTransaction: handleAddTransaction });
+  useDeepLink({ onAddTransaction: handleAddTransaction, onAddWithCategory: handleAddWithCategory });
 
   if (error) {
     return (
@@ -145,11 +157,13 @@ function AppContent() {
             <Route path="more/tags" element={<TagsPage />} />
             <Route path="more/export" element={<ExportPage />} />
             <Route path="more/import" element={<ImportPage />} />
+            <Route path="more/transfer-history" element={<TransferHistoryPage />} />
           </Route>
         </Routes>
       </Suspense>
       </AppLockProvider>
       <InstallPrompt />
+      <WhatsNewModal />
       <TransactionForm
         open={formOpen}
         onClose={handleFormClose}
@@ -162,7 +176,7 @@ function AppContent() {
           date: editTx.date,
           notes: editTx.notes,
           tags: editTx.tags,
-        } : undefined}
+        } : prefillCategory ? { categoryId: prefillCategory } : undefined}
       />
     </ErrorBoundary>
   );

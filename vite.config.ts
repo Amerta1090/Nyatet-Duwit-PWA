@@ -44,6 +44,33 @@ export default defineConfig({
               { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
             ],
           },
+          {
+            name: 'Tambah Makanan',
+            short_name: 'Makan',
+            description: 'Catat transaksi dengan kategori Makan & Minum',
+            url: '/?action=add&category=food',
+            icons: [
+              { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+            ],
+          },
+          {
+            name: 'Dashboard',
+            short_name: 'Dashboard',
+            description: 'Buka halaman utama',
+            url: '/?action=dashboard',
+            icons: [
+              { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+            ],
+          },
+          {
+            name: 'Insight',
+            short_name: 'Insight',
+            description: 'Lihat analisis keuangan',
+            url: '/?action=insights',
+            icons: [
+              { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+            ],
+          },
         ],
       },
     }),
