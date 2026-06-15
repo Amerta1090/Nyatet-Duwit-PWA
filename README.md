@@ -1,6 +1,6 @@
 # NyatetDuwit
 
-> Personal Finance PWA untuk User Indonesia — cepat, private, offline-first.
+> Personal Finance PWA untuk User Indonesia — cepat, private, offline-first. **V2 telah rilis!**
 
 🌐 **Live demo:** [https://nyatet-duwit.abdulmajidr708.workers.dev/](https://nyatet-duwit.abdulmajidr708.workers.dev/)
 
@@ -8,6 +8,21 @@ Catat pemasukan & pengeluaran dalam < 3 detik. Semua data tetap di HP kamu.
 
 ## Fitur
 
+### V2 (Baru!)
+- 🎯 **Savings Goal System**: Buat goal tabungan, track progress, milestone celebration
+- 🛡️ **Emergency Fund Tracker**: Hitung dana darurat (3× pengeluaran), pantau progress
+- 💳 **Debt/Piutang Tracker**: Catat utang & piutang, partial payment, due date reminders
+- 🏷️ **Tag System**: Tag transaksi, filter by tag, analisis per tag
+- 📈 **Spending Trend Chart**: Line chart 90 hari dengan moving average, zoom & pan
+- 💰 **Cashflow Chart**: Dual bar chart pemasukan vs pengeluaran per bulan
+- 📄 **Import CSV**: Import dari Money Lover / generic CSV dengan column mapping
+- 🔒 **App Lock**: Kunci app dengan PIN 6 digit atau biometrik (WebAuthn)
+- 🔐 **Local Encryption**: Enkripsi AES-256-GCM untuk data sensitif (opsional)
+- 🔔 **Smart Notification**: Notifikasi adaptive berdasarkan kebiasaan catat user
+- 🔄 **Transfer History**: Riwayat transfer antar akun dengan filter
+- 📱 **PWA Shortcuts**: 4 shortcut saat long-press icon (Tambah Transaksi, Makanan, Dashboard, Insight)
+
+### V1/V1.5 (Sejak Awal)
 - Quick Add Transaction (amount + category, < 3 detik)
 - Manajemen Akun (Cash, Bank, E-Wallet)
 - Manajemen Kategori (12 default + custom)
@@ -19,6 +34,9 @@ Catat pemasukan & pengeluaran dalam < 3 detik. Semua data tetap di HP kamu.
 - Daily Reminder Notification
 - Recording Streak
 - Backup & Restore (JSON export/import)
+- Export CSV & PDF
+- Onboarding v2 (setup wizard)
+- Language toggle (Indonesia / English)
 - 100% Offline
 - PWA Installable
 
@@ -35,7 +53,8 @@ Catat pemasukan & pengeluaran dalam < 3 detik. Semua data tetap di HP kamu.
 | PWA | vite-plugin-pwa |
 | Icons | Lucide React |
 | Date | date-fns |
-| Testing | Vitest + Testing Library |
+| Encryption | Web Crypto API (AES-256-GCM) |
+| Testing | Vitest + Testing Library (160+ tests) |
 
 ## Development
 

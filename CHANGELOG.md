@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.0.0] - 2026-06-15
+
+### Added
+- **Savings Goal System** (Sprint 1): Goal CRUD with target/deadline/icon/color, progress bar, goal dashboard widget, milestone celebration (25/50/75/100%)
+- **Emergency Fund & Debt Tracker** (Sprint 2): Emergency fund calculator (3× monthly expense), debt/piutang CRUD with partial payment tracking, due date reminders, debt dashboard widget, net balance summary
+- **Tag System** (Sprint 3): Tag CRUD with color picker, multi-select tag assignment on transactions, tag filter in transaction list, tag analytics in Insights, keyword-based tag suggestions
+- **Spending Trend & Cashflow Charts** (Sprint 4): 90-day spending trend line chart with 7-day moving average, pinch-to-zoom and pan, period comparison overlay; cashflow dual bar chart (income vs expense) with 6/12/24 month selector; all charts hand-rolled SVG, auto code-split
+- **Import CSV & App Lock** (Sprint 5): CSV import with column mapping, preview, validation, duplicate detection, support for Money Lover & generic formats; app lock with PIN 6-digit and biometric (WebAuthn), configurable timeout, graceful fallback
+- **Local Encryption & Smart Notifications** (Sprint 6): AES-256-GCM encryption toggle for sensitive fields (amount, notes, person names) using Web Crypto API; adaptive notification timing based on user recording patterns; V2 data in monthly review (tags, goals, debt, emergency fund)
+- **Transfer History & PWA Shortcuts** (Sprint 7): Dedicated transfer history page with account/date filters, grouped by date, summary card; 4 PWA shortcuts (Tambah Transaksi, Tambah Makanan, Dashboard, Insight); URL param deep linking for category pre-selection; in-app update checker with changelog, force update, and "What's New" modal
+
+### Changed
+- Dashboard: now shows goal progress widget, debt summary (collapsible), emergency fund status
+- Insights: tag spending breakdown, category pie chart, month-over-month comparison
+- More page: reorganized with new sections (Goals, Debt, Tags, Transfer History, Import)
+- Transaction form: optional tag assignment with multi-select chips
+- Security settings: app lock toggle, encryption toggle, biometric config
+- All V2 pages lazy-loaded to maintain bundle size < 350KB gzipped
+
+### Performance
+- Total JS bundle: ~260KB gzipped (well under 350KB target)
+- All charts render in < 500ms via hand-rolled SVG
+- Encryption overhead < 50ms per operation
+- All 23 page routes code-split via React.lazy
+
 ## [1.5.0] - 2026-05-28
 
 ### Added

@@ -197,7 +197,7 @@
 <body>
   <div class="container">
     <div class="logo">💳</div>
-    <h1>NyatetDuwit</h1>
+    <h1>NyatetDuwit <span class="badge">V2</span></h1>
     <p class="subtitle">Catat keuangan pribadi dengan cepat,<br />private & tanpa internet</p>
 
     <div class="benefits">
@@ -211,17 +211,25 @@
       </div>
       <div class="benefit">
         <div class="icon">🔒</div>
-        <span>Data tetap di HP kamu, tidak ada yang lihat</span>
+        <span>Enkripsi AES-256 & App Lock (PIN/Biometrik)</span>
       </div>
       <div class="benefit">
         <div class="icon">💰</div>
         <span>Gratis, tanpa login, tanpa iklan</span>
       </div>
+      <div class="benefit">
+        <div class="icon">🎯</div>
+        <span>Goal tabungan, tracking utang, & tag transaksi</span>
+      </div>
+      <div class="benefit">
+        <div class="icon">📈</div>
+        <span>Chart pengeluaran 90 hari & arus kas bulanan</span>
+      </div>
     </div>
 
     <a href="/nyatetduwit.apk" class="btn-download" id="downloadBtn">
-      📥 Download APK
-      <small>Android 8+ • ~5 MB</small>
+      📥 Download APK V2
+      <small>Android 8+ • ~6 MB</small>
     </a>
 
     <div class="divider">atau</div>
@@ -254,7 +262,6 @@
   </div>
 
   <script>
-    const pkg = {"version":"0.0.0"};
     fetch('/version.json')
       .then(r => r.json())
       .then(v => {
