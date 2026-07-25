@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetRepo } from '@/db/repositories/budgetRepository';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
-import { calculateDailyBudget, getTodaysBudget, getSpendingStatus, getSuggestion } from '@/utils/budgeting';
+import { getTodaysBudget, getSuggestion } from '@/utils/budgeting';
 import { formatCurrency } from '@/utils/format';
 import { format } from 'date-fns';
 import { ChevronRight, Wallet, TrendingDown, TrendingUp, Minus, Calendar } from 'lucide-react';
@@ -15,7 +15,6 @@ export function DailyBudgetCard() {
   const [remaining, setRemaining] = useState(0);
   const [carryForward, setCarryForward] = useState(0);
   const [isOverBudget, setIsOverBudget] = useState(false);
-  const [status, setStatus] = useState<string>('hemat');
   const [suggestion, setSuggestion] = useState('');
   const [totalBudget, setTotalBudget] = useState(0);
   const [cycleStart, setCycleStart] = useState<number>(0);
@@ -42,7 +41,6 @@ export function DailyBudgetCard() {
       const daysElapsed = Math.floor((now - cs) / msPerDay) + 1;
       const remaining = Math.max(30 - daysElapsed, 0);
 
-      const cycle = calculateDailyBudget(budget.totalBudget, expenseTxs, cs);
       const today = getTodaysBudget(budget.totalBudget, expenseTxs, cs, now);
 
       if (today) {
@@ -51,7 +49,6 @@ export function DailyBudgetCard() {
         setRemaining(today.remaining);
         setCarryForward(today.carryForward);
         setIsOverBudget(today.isOverBudget);
-        setStatus(getSpendingStatus(today));
         setSuggestion(getSuggestion(today));
       }
 

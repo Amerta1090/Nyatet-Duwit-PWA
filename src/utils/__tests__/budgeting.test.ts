@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   calculateDailyBudget,
   getTodaysBudget,
@@ -24,8 +24,10 @@ function makeTx(overrides: Partial<Transaction> = {}): Transaction {
     date: Date.now(),
     notes: '',
     createdAt: Date.now(),
+    updatedAt: Date.now(),
+    synced: false,
     ...overrides,
-  };
+  } as Transaction;
 }
 
 function getCycleStart(date: Date = new Date()): number {
@@ -91,7 +93,7 @@ describe('calculateDailyBudget', () => {
   it('last day absorbs rounding remainder', () => {
     const cycleStart = getCycleStart(new Date(2025, 0, 1));
     const result = calculateDailyBudget(100000, [], cycleStart);
-    const lastDay = result.dailyBreakdown[CYCLE_DAYS - 1];
+    const lastDay = result.dailyBreakdown[CYCLE_DAYS - 1]!;
     const otherDays = result.dailyBreakdown.slice(0, CYCLE_DAYS - 1);
     const totalFromDays = otherDays.reduce((s, d) => s + d.baseBudget, 0) + lastDay.baseBudget;
     expect(totalFromDays).toBe(100000);
@@ -101,8 +103,8 @@ describe('calculateDailyBudget', () => {
     const cycleStart = getCycleStart(new Date(2025, 0, 1));
     const tx = makeTx({ amount: 10000, date: cycleStart });
     const result = calculateDailyBudget(60000, [tx], cycleStart);
-    const day1 = result.dailyBreakdown[0];
-    const day2 = result.dailyBreakdown[1];
+    const day1 = result.dailyBreakdown[0]!;
+    const day2 = result.dailyBreakdown[1]!;
     expect(day1.remaining).toBe(day1.effectiveBudget - 10000);
     expect(day2.carryForward).toBe(day1.remaining);
     expect(day2.effectiveBudget).toBe(day2.baseBudget + day1.remaining);
@@ -113,8 +115,8 @@ describe('calculateDailyBudget', () => {
     const daily = Math.floor(60000 / CYCLE_DAYS);
     const tx = makeTx({ amount: daily + 5000, date: cycleStart });
     const result = calculateDailyBudget(60000, [tx], cycleStart);
-    const day1 = result.dailyBreakdown[0];
-    const day2 = result.dailyBreakdown[1];
+    const day1 = result.dailyBreakdown[0]!;
+    const day2 = result.dailyBreakdown[1]!;
     expect(day1.isOverBudget).toBe(true);
     expect(day2.carryForward).toBeLessThan(0);
     expect(day2.effectiveBudget).toBe(day2.baseBudget + day1.carryToNext);
@@ -125,21 +127,21 @@ describe('calculateDailyBudget', () => {
     const daily = Math.floor(60000 / CYCLE_DAYS);
     const tx = makeTx({ amount: daily + 1000, date: cycleStart });
     const result = calculateDailyBudget(60000, [tx], cycleStart);
-    expect(result.dailyBreakdown[0].isOverBudget).toBe(true);
+    expect(result.dailyBreakdown[0]!.isOverBudget).toBe(true);
   });
 
   it('ignores income transactions', () => {
     const cycleStart = getCycleStart(new Date(2025, 0, 1));
     const tx = makeTx({ type: 'income', amount: 50000, date: cycleStart });
     const result = calculateDailyBudget(60000, [tx], cycleStart);
-    expect(result.dailyBreakdown[0].spent).toBe(0);
+    expect(result.dailyBreakdown[0]!.spent).toBe(0);
   });
 
   it('ignores transactions outside cycle range', () => {
     const cycleStart = getCycleStart(new Date(2025, 0, 1));
     const tx = makeTx({ amount: 50000, date: cycleStart + (CYCLE_DAYS + 5) * 86400000 });
     const result = calculateDailyBudget(60000, [tx], cycleStart);
-    expect(result.dailyBreakdown[0].spent).toBe(0);
+    expect(result.dailyBreakdown[0]!.spent).toBe(0);
   });
 
   it('aggregates multiple transactions on same day', () => {
@@ -149,7 +151,7 @@ describe('calculateDailyBudget', () => {
       makeTx({ id: 'tx-2', amount: 7000, date: cycleStart }),
     ];
     const result = calculateDailyBudget(60000, txs, cycleStart);
-    expect(result.dailyBreakdown[0].spent).toBe(12000);
+    expect(result.dailyBreakdown[0]!.spent).toBe(12000);
   });
 
   it('handles zero budget', () => {
@@ -167,9 +169,9 @@ describe('calculateDailyBudget', () => {
       makeTx({ id: 'tx-2', amount: daily - 500, date: cycleStart + 86400000 }),
     ];
     const result = calculateDailyBudget(60000, txs, cycleStart);
-    const day1 = result.dailyBreakdown[0];
-    const day2 = result.dailyBreakdown[1];
-    const day3 = result.dailyBreakdown[2];
+    const day1 = result.dailyBreakdown[0]!;
+    const day2 = result.dailyBreakdown[1]!;
+    const day3 = result.dailyBreakdown[2]!;
     expect(day2.carryForward).toBe(day1.remaining);
     expect(day3.carryForward).toBe(day2.remaining);
   });

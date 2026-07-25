@@ -4,7 +4,6 @@ import { budgetRepo } from '@/db/repositories/budgetRepository';
 import { startOfDay } from 'date-fns';
 
 const CYCLE_SETTING_KEY = 'budget_cycle_start';
-const CYCLE_DAYS = 30;
 
 beforeEach(async () => {
   await db.open();

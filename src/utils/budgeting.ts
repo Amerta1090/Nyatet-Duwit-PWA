@@ -105,7 +105,6 @@ export function getBudgetSummary(
   now: number = Date.now()
 ): BudgetSummary {
   const { start, end } = getCycleRange(cycleStart);
-  const cycle = calculateDailyBudget(totalBudget, transactions, cycleStart);
 
   const totalSpent = transactions
     .filter((t) => t.type === 'expense' && t.date >= start && t.date <= now)
