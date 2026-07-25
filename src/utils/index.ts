@@ -5,3 +5,4 @@ export { debounce, throttle } from './timer';
 export { vibrate } from './haptic';
 export { cn } from './cn';
 export { getCategoryIcon } from './icons';
+export { calculateDailyBudget, getTodaysBudget, getBudgetSummary, getSpendingStatus, getSuggestion } from './budgeting';

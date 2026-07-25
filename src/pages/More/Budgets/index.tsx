@@ -6,8 +6,10 @@ import { formatCurrency } from '@/utils/format';
 import { getCategoryIcon } from '@/utils/icons';
 import { useUIStore } from '@/stores/uiStore';
 import { EmptyState, BottomSheet, Badge } from '@/components/ui';
-import { Landmark, Plus, Trash2 } from 'lucide-react';
+import { Landmark, Plus, Trash2, Calendar, Clock } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { format } from 'date-fns';
+import { CYCLE_DAYS } from '@/types/budgeting';
 
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<BudgetSummary[]>([]);
@@ -18,16 +20,30 @@ export default function BudgetsPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [cycleStart, setCycleStart] = useState<number>(0);
+  const [cycleEnd, setCycleEnd] = useState<number>(0);
+  const [daysElapsed, setDaysElapsed] = useState(0);
+  const [daysRemaining, setDaysRemaining] = useState(0);
   const { showToast } = useUIStore();
 
   async function loadBudgets() {
     setLoading(true);
+    const { cycleStart: cs, cycleEnd: ce } = await budgetRepo.ensureActiveCycle();
+    const now = Date.now();
+    const msPerDay = 86400000;
+    const elapsed = Math.min(Math.floor((now - cs) / msPerDay) + 1, CYCLE_DAYS);
+    const remaining = Math.max(CYCLE_DAYS - elapsed, 0);
+
     const [b, cats] = await Promise.all([
-      budgetRepo.getAll(),
+      budgetRepo.getAll(cs, ce),
       categoryRepo.getByType('expense'),
     ]);
     setBudgets(b);
     setCategories(cats);
+    setCycleStart(cs);
+    setCycleEnd(ce);
+    setDaysElapsed(elapsed);
+    setDaysRemaining(remaining);
     setLoading(false);
   }
 
@@ -71,6 +87,12 @@ export default function BudgetsPage() {
     loadBudgets();
   }
 
+  async function handleResetCycle() {
+    await budgetRepo.setCycleStart(Date.now());
+    showToast('Siklus budget di-reset ke hari ini', 'success');
+    loadBudgets();
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -82,9 +104,39 @@ export default function BudgetsPage() {
   const total = budgets.reduce((s, b) => s + b.limit, 0);
   const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
   const overLimit = budgets.filter((b) => b.status === 'danger');
+  const cycleProgress = daysElapsed / CYCLE_DAYS;
 
   return (
     <div className="flex flex-col gap-4 py-4">
+      {cycleStart > 0 && (
+        <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-neutral-800">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary-500" />
+              <span className="text-xs font-medium text-neutral-700 dark:text-neutral-100">Siklus Aktif</span>
+            </div>
+            <button
+              onClick={handleResetCycle}
+              className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-danger-500"
+            >
+              <Clock className="h-3 w-3" />
+              Reset
+            </button>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-neutral-400 mb-2">
+            <span>{format(cycleStart, 'd MMM yyyy')}</span>
+            <span className="font-medium text-primary-500">{daysRemaining} hari tersisa</span>
+            <span>{format(cycleEnd, 'd MMM yyyy')}</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-700">
+            <div
+              className="h-full rounded-full bg-primary-500 transition-all"
+              style={{ width: `${cycleProgress * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {budgets.length > 0 && (
         <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-neutral-800">
           <div className="mb-2 flex items-center justify-between">
@@ -113,7 +165,7 @@ export default function BudgetsPage() {
         <EmptyState
           icon={<Landmark className="h-12 w-12" />}
           title="Belum ada budget"
-          description="Atur budget bulanan untuk setiap kategori pengeluaran"
+          description="Atur budget 30 hari untuk setiap kategori pengeluaran"
           action={<button onClick={openAddForm} className="rounded-xl bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Tambah Budget</button>}
         />
       ) : (
@@ -194,7 +246,7 @@ export default function BudgetsPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 text-xs font-medium text-neutral-500">Batas Bulanan (Rp)</label>
+            <label className="mb-1 text-xs font-medium text-neutral-500">Batas 30 Hari (Rp)</label>
             <input
               type="text"
               inputMode="numeric"

@@ -1,11 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '@/db';
 import { budgetRepo } from '@/db/repositories/budgetRepository';
+import { startOfDay } from 'date-fns';
+
+const CYCLE_SETTING_KEY = 'budget_cycle_start';
+const CYCLE_DAYS = 30;
 
 beforeEach(async () => {
   await db.open();
   await db.transactions.clear();
   await db.categories.clear();
+  await db.settings.clear();
+  const now = startOfDay(Date.now()).getTime();
+  await db.settings.put({ key: CYCLE_SETTING_KEY, value: String(now) });
 });
 
 const makeCat = (overrides: Record<string, unknown>) => ({
@@ -33,6 +40,10 @@ const makeTx = (overrides: Record<string, unknown>) => ({
   ...overrides,
 });
 
+function getCycleStart(): number {
+  return startOfDay(Date.now()).getTime();
+}
+
 describe('budgetRepo', () => {
   it('returns empty array when no categories have budget', async () => {
     await db.categories.bulkAdd([
@@ -54,11 +65,13 @@ describe('budgetRepo', () => {
   });
 
   it('calculates spent amount from transactions', async () => {
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+    const cs = getCycleStart();
+    const day1 = cs + 1000;
+    const day2 = cs + 2000;
     await db.categories.add(makeCat({ id: 'cat-1', name: 'Makanan', budgetLimit: 500000 }));
     await db.transactions.bulkAdd([
-      makeTx({ id: 'tx-1', amount: 100000, categoryId: 'cat-1', accountId: 'acc-1', date: monthStart + 1000 }),
-      makeTx({ id: 'tx-2', amount: 50000, categoryId: 'cat-1', accountId: 'acc-1', date: monthStart + 2000 }),
+      makeTx({ id: 'tx-1', amount: 100000, categoryId: 'cat-1', accountId: 'acc-1', date: day1 }),
+      makeTx({ id: 'tx-2', amount: 50000, categoryId: 'cat-1', accountId: 'acc-1', date: day2 }),
     ]);
     const result = await budgetRepo.getAll();
     expect(result[0]?.spent).toBe(150000);
@@ -66,30 +79,30 @@ describe('budgetRepo', () => {
   });
 
   it('marks status danger when over 100%', async () => {
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+    const cs = getCycleStart();
     await db.categories.add(makeCat({ id: 'cat-1', name: 'Makanan', budgetLimit: 100000 }));
-    await db.transactions.add(makeTx({ id: 'tx-1', amount: 150000, categoryId: 'cat-1', accountId: 'acc-1', date: monthStart + 1000 }));
+    await db.transactions.add(makeTx({ id: 'tx-1', amount: 150000, categoryId: 'cat-1', accountId: 'acc-1', date: cs + 1000 }));
     const result = await budgetRepo.getAll();
     expect(result[0]?.status).toBe('danger');
   });
 
   it('marks status warning between 75-100%', async () => {
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+    const cs = getCycleStart();
     await db.categories.add(makeCat({ id: 'cat-1', name: 'Makanan', budgetLimit: 100000 }));
-    await db.transactions.add(makeTx({ id: 'tx-1', amount: 80000, categoryId: 'cat-1', accountId: 'acc-1', date: monthStart + 1000 }));
+    await db.transactions.add(makeTx({ id: 'tx-1', amount: 80000, categoryId: 'cat-1', accountId: 'acc-1', date: cs + 1000 }));
     const result = await budgetRepo.getAll();
     expect(result[0]?.status).toBe('warning');
   });
 
   it('getTotalBudget returns aggregate totals', async () => {
+    const cs = getCycleStart();
     await db.categories.bulkAdd([
       makeCat({ id: 'cat-1', name: 'Makanan', budgetLimit: 500000 }),
       makeCat({ id: 'cat-2', name: 'Belanja', budgetLimit: 300000 }),
     ]);
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
     await db.transactions.bulkAdd([
-      makeTx({ id: 'tx-1', amount: 100000, categoryId: 'cat-1', accountId: 'acc-1', date: monthStart + 1000 }),
-      makeTx({ id: 'tx-2', amount: 50000, categoryId: 'cat-2', accountId: 'acc-1', date: monthStart + 2000 }),
+      makeTx({ id: 'tx-1', amount: 100000, categoryId: 'cat-1', accountId: 'acc-1', date: cs + 1000 }),
+      makeTx({ id: 'tx-2', amount: 50000, categoryId: 'cat-2', accountId: 'acc-1', date: cs + 2000 }),
     ]);
     const result = await budgetRepo.getTotalBudget();
     expect(result.totalBudget).toBe(800000);
@@ -111,14 +124,14 @@ describe('budgetRepo', () => {
   });
 
   it('getOverspent returns only danger budgets', async () => {
+    const cs = getCycleStart();
     await db.categories.bulkAdd([
       makeCat({ id: 'cat-1', name: 'Makanan', budgetLimit: 100000 }),
       makeCat({ id: 'cat-2', name: 'Belanja', budgetLimit: 500000 }),
     ]);
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
     await db.transactions.bulkAdd([
-      makeTx({ id: 'tx-1', amount: 150000, categoryId: 'cat-1', accountId: 'acc-1', date: monthStart + 1000 }),
-      makeTx({ id: 'tx-2', amount: 100000, categoryId: 'cat-2', accountId: 'acc-1', date: monthStart + 2000 }),
+      makeTx({ id: 'tx-1', amount: 150000, categoryId: 'cat-1', accountId: 'acc-1', date: cs + 1000 }),
+      makeTx({ id: 'tx-2', amount: 100000, categoryId: 'cat-2', accountId: 'acc-1', date: cs + 2000 }),
     ]);
     const result = await budgetRepo.getOverspent();
     expect(result).toHaveLength(1);

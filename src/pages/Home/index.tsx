@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { TransactionForm, GoalSummaryWidget, EmergencyFundWidget, DebtSummaryWidget } from '@/components/finance';
+import { DailyBudgetCard } from '@/components/finance/DailyBudgetCard';
 import { accountRepo } from '@/db/repositories/accountRepository';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
 import { categoryRepo } from '@/db/repositories/categoryRepository';
 import { budgetRepo } from '@/db/repositories/budgetRepository';
 import { WeeklySummaryCard } from '@/components/finance/WeeklySummaryCard';
-import { YouSavedHighlight } from '@/components/finance/YouSavedHighlight';
 import type { Account, Transaction, Category } from '@/types';
 import { formatCurrency } from '@/utils/format';
-import { startOfDay, getMonthRange } from '@/utils/date';
+import { startOfDay } from '@/utils/date';
 import { ArrowLeftRight, TrendingUp, TrendingDown, ChevronRight, Flame } from 'lucide-react';
 import { EmptyState, Skeleton } from '@/components/ui';
 import { TransactionItem } from '@/components/finance/TransactionItem';
@@ -29,8 +29,6 @@ export default function HomePage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [monthlyExpense, setMonthlyExpense] = useState(0);
-  const [prevIncome, setPrevIncome] = useState(0);
-  const [prevExpense, setPrevExpense] = useState(0);
   const [streak, setStreak] = useState(0);
   const [totalBudget, setTotalBudget] = useState(0);
   const [totalBudgetSpent, setTotalBudgetSpent] = useState(0);
@@ -38,26 +36,17 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
-    const range = getMonthRange(Date.now());
-    const monthStart = range.start;
-    const monthEnd = range.end;
-    const d = new Date(range.start);
-    d.setMonth(d.getMonth() - 1);
-    const prevRange = getMonthRange(d.getTime());
-    const prevMonthStart = prevRange.start;
-    const prevMonthEnd = prevRange.end;
-    const [balance, txs, cats, accs, income, expense, prevInc, prevExp, streakDays, budget, overspent] = await Promise.all([
+    const { cycleStart, cycleEnd } = await budgetRepo.ensureActiveCycle();
+    const [balance, txs, cats, accs, income, expense, streakDays, budget, overspent] = await Promise.all([
       accountRepo.getTotalBalance(),
       transactionRepo.getAll({ limit: 10 }),
       categoryRepo.getAll(),
       accountRepo.getAll(true),
-      transactionRepo.getTotalByType('income', monthStart, monthEnd),
-      transactionRepo.getTotalByType('expense', monthStart, monthEnd),
-      transactionRepo.getTotalByType('income', prevMonthStart, prevMonthEnd),
-      transactionRepo.getTotalByType('expense', prevMonthStart, prevMonthEnd),
+      transactionRepo.getTotalByType('income', cycleStart, cycleEnd),
+      transactionRepo.getTotalByType('expense', cycleStart, cycleEnd),
       computeStreak(),
-      budgetRepo.getTotalBudget(monthStart, monthEnd),
-      budgetRepo.getOverspent(monthStart, monthEnd),
+      budgetRepo.getTotalBudget(cycleStart, cycleEnd),
+      budgetRepo.getOverspent(cycleStart, cycleEnd),
     ]);
     setTotalBalance(balance);
     setRecentTxs(txs);
@@ -65,8 +54,6 @@ export default function HomePage() {
     setAccounts(accs);
     setMonthlyIncome(income);
     setMonthlyExpense(expense);
-    setPrevIncome(prevInc);
-    setPrevExpense(prevExp);
     setStreak(streakDays);
     setTotalBudget(budget.totalBudget);
     setTotalBudgetSpent(budget.totalSpent);
@@ -140,8 +127,6 @@ export default function HomePage() {
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]));
   const netMonthly = monthlyIncome - monthlyExpense;
-  const incomeChange = prevIncome > 0 ? ((monthlyIncome - prevIncome) / prevIncome) * 100 : 0;
-  const expenseChange = prevExpense > 0 ? ((monthlyExpense - prevExpense) / prevExpense) * 100 : 0;
   const budgetPercent = totalBudget > 0 ? Math.min((totalBudgetSpent / totalBudget) * 100, 100) : 0;
 
   return (
@@ -169,11 +154,6 @@ export default function HomePage() {
               Pemasukan
             </div>
             <p className="mt-1 text-lg font-bold text-accent-600">{formatCurrency(monthlyIncome)}</p>
-            {prevIncome > 0 && (
-              <p className={cn('text-xs', incomeChange >= 0 ? 'text-accent-500' : 'text-danger-500')}>
-                {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% dari bulan lalu
-              </p>
-            )}
           </div>
           <div className="rounded-xl bg-danger-50 p-4 dark:bg-danger-500/10">
             <div className="flex items-center gap-1 text-sm text-danger-600">
@@ -181,11 +161,6 @@ export default function HomePage() {
               Pengeluaran
             </div>
             <p className="mt-1 text-lg font-bold text-danger-600">{formatCurrency(monthlyExpense)}</p>
-            {prevExpense > 0 && (
-              <p className={cn('text-xs', expenseChange <= 0 ? 'text-accent-500' : 'text-danger-500')}>
-                {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% dari bulan lalu
-              </p>
-            )}
           </div>
         </div>
       )}
@@ -193,22 +168,12 @@ export default function HomePage() {
       {!loading && (monthlyIncome > 0 || monthlyExpense > 0) && (
         <div className="rounded-xl bg-neutral-50 p-4 dark:bg-neutral-800">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-100">Sisa Bulan Ini</p>
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-100">Sisa Siklus Ini</p>
             <span className={cn('text-lg font-bold', netMonthly >= 0 ? 'text-accent-500' : 'text-danger-500')}>
               {netMonthly >= 0 ? '+' : ''}{formatCurrency(netMonthly)}
             </span>
           </div>
         </div>
-      )}
-
-      {!loading && (monthlyIncome > 0 || monthlyExpense > 0) && (
-        <YouSavedHighlight
-          currentIncome={monthlyIncome}
-          currentExpense={monthlyExpense}
-          prevIncome={prevIncome}
-          prevExpense={prevExpense}
-          minimal
-        />
       )}
 
       {!loading && <WeeklySummaryCard />}
@@ -244,6 +209,8 @@ export default function HomePage() {
           )}
         </div>
       )}
+
+      {!loading && <DailyBudgetCard />}
 
       <div>
         <div className="mb-3 flex items-center justify-between">

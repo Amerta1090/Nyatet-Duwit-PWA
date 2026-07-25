@@ -17,3 +17,4 @@ export { TagForm } from './TagForm';
 export { TagPicker } from './TagPicker';
 export { SpendingTrendChart } from './SpendingTrendChart';
 export { CashflowChart } from './CashflowChart';
+export { DailyBudgetCard } from './DailyBudgetCard';

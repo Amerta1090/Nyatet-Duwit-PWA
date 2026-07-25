@@ -1,4 +1,6 @@
 import { db } from '../schema';
+import { getCycleRange, isCycleExpired, getNewCycleStart } from '@/utils/budgeting';
+import { startOfDay } from 'date-fns';
 
 export interface BudgetSummary {
   categoryId: string;
@@ -11,23 +13,45 @@ export interface BudgetSummary {
   status: 'safe' | 'warning' | 'danger';
 }
 
+const CYCLE_SETTING_KEY = 'budget_cycle_start';
+
 export const budgetRepo = {
-  _getMonthRange(now: number): { monthStart: number; monthEnd: number } {
-    const d = new Date(now);
-    return {
-      monthStart: new Date(d.getFullYear(), d.getMonth(), 1).getTime(),
-      monthEnd: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999).getTime(),
-    };
+  async getCycleStart(): Promise<number> {
+    const setting = await db.settings.get(CYCLE_SETTING_KEY);
+    if (setting) {
+      return Number(setting.value);
+    }
+    const now = Date.now();
+    await db.settings.put({ key: CYCLE_SETTING_KEY, value: String(now) });
+    return startOfDay(now).getTime();
   },
 
-  async getAll(monthStart?: number, monthEnd?: number): Promise<BudgetSummary[]> {
-    const categories = await db.categories.toArray();
-    if (!monthStart || !monthEnd) {
-      const range = this._getMonthRange(Date.now());
-      monthStart = range.monthStart;
-      monthEnd = range.monthEnd;
+  async setCycleStart(timestamp: number): Promise<void> {
+    await db.settings.put({ key: CYCLE_SETTING_KEY, value: String(startOfDay(timestamp).getTime()) });
+  },
+
+  async ensureActiveCycle(): Promise<{ cycleStart: number; cycleEnd: number; isNew: boolean }> {
+    const cycleStart = await this.getCycleStart();
+    if (isCycleExpired(cycleStart)) {
+      const newStart = getNewCycleStart(cycleStart);
+      await this.setCycleStart(newStart);
+      const { end } = getCycleRange(newStart);
+      return { cycleStart: newStart, cycleEnd: end, isNew: true };
     }
-    const txs = await db.transactions.where('date').between(monthStart, monthEnd).toArray();
+    const { end } = getCycleRange(cycleStart);
+    return { cycleStart, cycleEnd: end, isNew: false };
+  },
+
+  async getAll(cycleStart?: number, cycleEnd?: number): Promise<BudgetSummary[]> {
+    const categories = await db.categories.toArray();
+    let start = cycleStart;
+    let end = cycleEnd;
+    if (!start || !end) {
+      const cycle = await this.ensureActiveCycle();
+      start = cycle.cycleStart;
+      end = cycle.cycleEnd;
+    }
+    const txs = await db.transactions.where('date').between(start!, end!).toArray();
     const grouped = new Map<string, number>();
     for (const tx of txs) {
       if (tx.type === 'expense') {
@@ -51,15 +75,15 @@ export const budgetRepo = {
     });
   },
 
-  async getTotalBudget(monthStart?: number, monthEnd?: number): Promise<{ totalBudget: number; totalSpent: number; totalPercent: number }> {
-    const budgets = await this.getAll(monthStart, monthEnd);
+  async getTotalBudget(cycleStart?: number, cycleEnd?: number): Promise<{ totalBudget: number; totalSpent: number; totalPercent: number }> {
+    const budgets = await this.getAll(cycleStart, cycleEnd);
     const totalBudget = budgets.reduce((s, b) => s + b.limit, 0);
     const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
     return { totalBudget, totalSpent, totalPercent: totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0 };
   },
 
-  async getOverspent(monthStart?: number, monthEnd?: number): Promise<BudgetSummary[]> {
-    const budgets = await this.getAll(monthStart, monthEnd);
+  async getOverspent(cycleStart?: number, cycleEnd?: number): Promise<BudgetSummary[]> {
+    const budgets = await this.getAll(cycleStart, cycleEnd);
     return budgets.filter((b) => b.status === 'danger');
   },
 
