@@ -9,3 +9,8 @@ if (typeof ResizeObserver === 'undefined') {
     disconnect() {}
   } as any;
 }
+
+if (typeof URL.createObjectURL === 'undefined') {
+  URL.createObjectURL = () => 'blob:mock';
+  URL.revokeObjectURL = () => {};
+}

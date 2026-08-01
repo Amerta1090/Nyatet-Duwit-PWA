@@ -5,12 +5,15 @@ import { useDeepLink } from '@/hooks/useDeepLink';
 import { useWeeklySummary } from '@/hooks/useWeeklySummary';
 import { useEncryptionStore } from '@/stores/encryptionStore';
 import { InstallPrompt } from '@/components/pwa';
+import { AutoBackupBanner } from '@/components/pwa/AutoBackupBanner';
+import { RestoreDialog } from '@/components/pwa/RestoreDialog';
 import { WhatsNewModal } from '@/components/pwa/WhatsNewModal';
 import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { Skeleton, ErrorBoundary } from '@/components/ui';
 import { TransactionForm } from '@/components/finance/TransactionForm';
 import { AppLockProvider } from '@/components/auth/AppLockProvider';
 import { useAppStore } from '@/stores/appStore';
+import { useAutoBackup } from '@/hooks/useAutoBackup';
 import { db } from '@/db/schema';
 import type { Transaction } from '@/types';
 
@@ -48,7 +51,8 @@ function PageLoader() {
 }
 
 function AppContent() {
-  const { ready, error } = useDatabase();
+  const { ready, error, restoreCheck, startFresh } = useDatabase();
+  const { bannerVisible, backupNow, dismissBanner } = useAutoBackup(ready);
   const [formOpen, setFormOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const darkMode = useAppStore((s) => s.darkMode);
@@ -121,6 +125,10 @@ function AppContent() {
     );
   }
 
+  if (restoreCheck === 'needs-restore') {
+    return <RestoreDialog onStartFresh={startFresh} />;
+  }
+
   if (!ready) {
     return (
       <div className="flex h-dvh items-center justify-center p-8">
@@ -164,6 +172,12 @@ function AppContent() {
       </AppLockProvider>
       <InstallPrompt />
       <WhatsNewModal />
+      {bannerVisible && (
+        <AutoBackupBanner
+          onDownload={() => void backupNow()}
+          onClose={dismissBanner}
+        />
+      )}
       <TransactionForm
         open={formOpen}
         onClose={handleFormClose}

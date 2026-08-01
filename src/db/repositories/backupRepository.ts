@@ -1,26 +1,31 @@
 import { db } from '../schema';
+import type { Account, Transaction, Category, RecurringTransaction, Goal, Debt, Tag, AppSettings } from '@/types';
 
 export interface BackupData {
   version: string;
   exportDate: string;
-  accounts: import('@/types').Account[];
-  transactions: import('@/types').Transaction[];
-  categories: import('@/types').Category[];
-  recurring: import('@/types').RecurringTransaction[];
-  goals: import('@/types').Goal[];
-  settings: import('@/types').AppSettings[];
+  accounts: Account[];
+  transactions: Transaction[];
+  categories: Category[];
+  recurring: RecurringTransaction[];
+  goals: Goal[];
+  debts?: Debt[];
+  tags?: Tag[];
+  settings: AppSettings[];
 }
 
-const CURRENT_VERSION = '1.1';
+const CURRENT_VERSION = '1.2';
 
 export const backupRepo = {
   async exportData(): Promise<BackupData> {
-    const [accounts, transactions, categories, recurring, goals, settings] = await Promise.all([
+    const [accounts, transactions, categories, recurring, goals, debts, tags, settings] = await Promise.all([
       db.accounts.toArray(),
       db.transactions.toArray(),
       db.categories.toArray(),
       db.recurring.toArray(),
       db.goals.toArray(),
+      db.debts.toArray(),
+      db.tags.toArray(),
       db.settings.toArray(),
     ]);
 
@@ -32,6 +37,8 @@ export const backupRepo = {
       categories,
       recurring,
       goals,
+      debts,
+      tags,
       settings,
     };
   },
@@ -43,7 +50,9 @@ export const backupRepo = {
     const a = document.createElement('a');
     a.href = url;
     a.download = `nyatetduwit-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },
 
@@ -55,13 +64,15 @@ export const backupRepo = {
     }
 
     try {
-      await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.goals, db.settings], async () => {
+      await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.goals, db.debts, db.tags, db.settings], async () => {
         await Promise.all([
           db.accounts.clear(),
           db.transactions.clear(),
           db.categories.clear(),
           db.recurring.clear(),
           db.goals.clear(),
+          db.debts.clear(),
+          db.tags.clear(),
           db.settings.clear(),
         ]);
 
@@ -70,6 +81,8 @@ export const backupRepo = {
         if (parsed.categories && parsed.categories.length > 0) await db.categories.bulkAdd(parsed.categories!);
         if (parsed.recurring && parsed.recurring.length > 0) await db.recurring.bulkAdd(parsed.recurring!);
         if (parsed.goals && parsed.goals.length > 0) await db.goals.bulkAdd(parsed.goals!);
+        if (parsed.debts && parsed.debts.length > 0) await db.debts.bulkAdd(parsed.debts!);
+        if (parsed.tags && parsed.tags.length > 0) await db.tags.bulkAdd(parsed.tags!);
         if (parsed.settings && parsed.settings.length > 0) await db.settings.bulkAdd(parsed.settings!);
       });
 
@@ -81,13 +94,15 @@ export const backupRepo = {
   },
 
   async clearAllData(): Promise<void> {
-    await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.goals, db.settings], async () => {
+    await db.transaction('rw', [db.accounts, db.transactions, db.categories, db.recurring, db.goals, db.debts, db.tags, db.settings], async () => {
       await Promise.all([
         db.accounts.clear(),
         db.transactions.clear(),
         db.categories.clear(),
         db.recurring.clear(),
         db.goals.clear(),
+        db.debts.clear(),
+        db.tags.clear(),
         db.settings.clear(),
       ]);
     });

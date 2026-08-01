@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { backupRepo } from '@/db/repositories/backupRepository';
+import { runBackupNow, getLastBackupLabel } from '@/db/backup';
 import { useUIStore } from '@/stores/uiStore';
 import { useDatabase } from '@/hooks/useDatabase';
 import { Button, Modal } from '@/components/ui';
-import { Download, Upload, Trash2, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Download, Upload, Trash2, ArrowLeft, AlertTriangle, Clock } from 'lucide-react';
 
 export default function BackupRestorePage() {
   const navigate = useNavigate();
@@ -14,6 +15,23 @@ export default function BackupRestorePage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(() => getLastBackupLabel());
+
+  async function handleAutoBackup() {
+    setExporting(true);
+    try {
+      const ok = await runBackupNow();
+      if (ok) {
+        setLastBackup(getLastBackupLabel());
+        showToast('Backup harian berhasil dibuat', 'success');
+      } else {
+        showToast('Belum ada data untuk di-backup', 'info');
+      }
+    } catch {
+      showToast('Gagal membuat backup', 'error');
+    }
+    setExporting(false);
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -69,6 +87,24 @@ export default function BackupRestorePage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Backup & Restore</h1>
+      </div>
+
+      <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-neutral-800">
+        <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+          <Clock className="h-4 w-4 text-primary-500" />
+          Backup Otomatis
+        </h2>
+        <p className="mb-3 text-xs text-neutral-400">
+          Setiap hari, data otomatis diexport ke file JSON di folder Downloads perangkat. Jika data browser hilang,
+          pulihkan dari file backup tersebut.
+        </p>
+        <p className="mb-3 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          {lastBackup ? `Terakhir backup: ${lastBackup}` : 'Belum ada backup otomatis hari ini.'}
+        </p>
+        <Button onClick={handleAutoBackup} disabled={!ready || exporting} className="w-full">
+          <Download className="mr-2 h-4 w-4" />
+          {exporting ? 'Membuat backup...' : 'Backup Sekarang'}
+        </Button>
       </div>
 
       <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-neutral-800">
