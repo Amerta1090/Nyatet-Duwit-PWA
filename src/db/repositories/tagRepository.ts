@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import type { Tag, Transaction } from '@/types';
 import { generateId } from '@/utils/id';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export const tagRepo = {
   async getAll(): Promise<Tag[]> {
@@ -21,6 +22,7 @@ export const tagRepo = {
       createdAt: now,
     };
     await db.tags.add(tag);
+    notifyDataChanged();
     return tag;
   },
 
@@ -28,6 +30,7 @@ export const tagRepo = {
     await db.tags.update(id, data);
     const updated = await db.tags.get(id);
     if (!updated) throw new Error('Tag not found');
+    notifyDataChanged();
     return updated;
   },
 
@@ -42,6 +45,7 @@ export const tagRepo = {
         }
       }
     });
+    notifyDataChanged();
   },
 
   async getTotalSpending(tagId: string, dateFrom: number, dateTo: number): Promise<number> {

@@ -14,12 +14,14 @@ import { ArrowLeftRight, TrendingUp, TrendingDown, ChevronRight, Flame } from 'l
 import { EmptyState, Skeleton } from '@/components/ui';
 import { TransactionItem } from '@/components/finance/TransactionItem';
 import { useUIStore } from '@/stores/uiStore';
+import { useDataStore } from '@/stores/dataStore';
 import { cn } from '@/utils/cn';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { fabSignal, doubleTapSignal } = useOutletContext<{ fabSignal: number; doubleTapSignal: number }>();
   const { showToast } = useUIStore();
+  const revision = useDataStore((s) => s.revision);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
@@ -87,7 +89,7 @@ export default function HomePage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [revision]);
 
   useEffect(() => {
     if (fabSignal > 0) setFormOpen(true);

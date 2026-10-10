@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import { transactionRepo } from './transactionRepository';
 import { accountRepo } from './accountRepository';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 const SETTING_TARGET = 'emergency_fund_target';
 const SETTING_ACCOUNTS = 'emergency_fund_accounts';
@@ -18,6 +19,7 @@ export const emergencyFundRepo = {
   async setTarget(amount: number | 'auto'): Promise<void> {
     const value = amount === 'auto' ? 'auto' : String(amount);
     await db.settings.put({ key: SETTING_TARGET, value });
+    notifyDataChanged();
   },
 
   async getLinkedAccountIds(): Promise<string[]> {
@@ -28,6 +30,7 @@ export const emergencyFundRepo = {
 
   async setLinkedAccountIds(ids: string[]): Promise<void> {
     await db.settings.put({ key: SETTING_ACCOUNTS, value: ids.join(',') });
+    notifyDataChanged();
   },
 
   async getCurrentAmount(): Promise<number> {

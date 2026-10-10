@@ -4,9 +4,11 @@ import { emergencyFundRepo } from '@/db/repositories/emergencyFundRepository';
 import { formatCurrency } from '@/utils/format';
 import { ShieldAlert, ShieldCheck, ChevronRight } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useDataStore } from '@/stores/dataStore';
 
 export function EmergencyFundWidget() {
   const navigate = useNavigate();
+  const revision = useDataStore((s) => s.revision);
   const [percent, setPercent] = useState(0);
   const [current, setCurrent] = useState(0);
   const [target, setTarget] = useState(0);
@@ -22,7 +24,7 @@ export function EmergencyFundWidget() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [revision]);
 
   if (!ready) return null;
 

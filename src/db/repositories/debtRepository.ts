@@ -2,6 +2,7 @@ import { db } from '../schema';
 import type { Debt } from '@/types';
 import { generateId } from '@/utils/id';
 import { encryptDebt, decryptDebt, decryptDebts } from '../encryptionMiddleware';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export interface CreateDebtInput {
   type: 'owed' | 'owing';
@@ -40,6 +41,7 @@ export const debtRepo = {
 
     const encrypted = await encryptDebt(rawDebt);
     await db.debts.add(encrypted as Debt);
+    notifyDataChanged();
     return rawDebt;
   },
 
@@ -49,11 +51,13 @@ export const debtRepo = {
     await db.debts.update(id, updateData);
     const updated = await db.debts.get(id);
     if (!updated) throw new Error('Debt not found');
+    notifyDataChanged();
     return decryptDebt(updated);
   },
 
   async delete(id: string): Promise<void> {
     await db.debts.delete(id);
+    notifyDataChanged();
   },
 
   async getByType(type: 'owed' | 'owing'): Promise<Debt[]> {

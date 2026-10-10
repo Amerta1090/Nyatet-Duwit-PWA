@@ -22,7 +22,9 @@ vi.mock('@/utils/cn', () => ({
 import { DailyBudgetCard } from '../DailyBudgetCard';
 import { budgetRepo } from '@/db/repositories/budgetRepository';
 import { transactionRepo } from '@/db/repositories/transactionRepository';
+import { useDataStore } from '@/stores/dataStore';
 import { CYCLE_DAYS } from '@/types/budgeting';
+import type { Transaction } from '@/types';
 import { startOfDay } from 'date-fns';
 
 function renderCard() {
@@ -80,6 +82,61 @@ describe('DailyBudgetCard', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Siklus:/)).toBeTruthy();
+    });
+  });
+
+  it('refreshes today spending when revision bumps (simulates catat pengeluaran)', async () => {
+    const cycleStart = startOfDay(Date.now()).getTime();
+    const cycleEnd = cycleStart + (CYCLE_DAYS - 1) * 86400000 + 86399999;
+    vi.mocked(budgetRepo.ensureActiveCycle).mockResolvedValue({ cycleStart, cycleEnd, isNew: false });
+    vi.mocked(budgetRepo.getTotalBudget).mockResolvedValue({ totalBudget: 60000, totalSpent: 0, totalPercent: 0 });
+
+    let todayTxs: Transaction[] = [];
+    vi.mocked(transactionRepo.getByDateRange).mockImplementation(async () => todayTxs);
+
+    renderCard();
+    await waitFor(() => {
+      expect(screen.getByText('Budget Hari Ini')).toBeTruthy();
+    });
+    expect(screen.getByText('Rp 0')).toBeTruthy(); // Terpakai masih 0
+
+    // Pengguna mencatat pengeluaran hari ini -> revision naik
+    const now = Date.now();
+    todayTxs = [{
+      id: 'tx-1', type: 'expense', amount: 5000, categoryId: 'cat-1', accountId: 'acc-1',
+      date: now, createdAt: now, updatedAt: now, synced: false,
+    }];
+    act(() => {
+      useDataStore.getState().bumpRevision();
+    });
+
+    await waitFor(() => {
+      // Terpakai harus langsung ter-update tanpa refresh halaman
+      expect(screen.getByText('Rp 5.000')).toBeTruthy();
+    });
+  });
+
+  it('hides when all budgets removed while mounted (revision bump → total budget 0)', async () => {
+    const cycleStart = startOfDay(Date.now()).getTime();
+    const cycleEnd = cycleStart + (CYCLE_DAYS - 1) * 86400000 + 86399999;
+    vi.mocked(budgetRepo.ensureActiveCycle).mockResolvedValue({ cycleStart, cycleEnd, isNew: false });
+    vi.mocked(transactionRepo.getByDateRange).mockResolvedValue([]);
+
+    vi.mocked(budgetRepo.getTotalBudget)
+      .mockResolvedValueOnce({ totalBudget: 60000, totalSpent: 0, totalPercent: 0 })
+      .mockResolvedValue({ totalBudget: 0, totalSpent: 0, totalPercent: 0 });
+
+    const { container } = renderCard();
+    await waitFor(() => {
+      expect(screen.getByText('Budget Hari Ini')).toBeTruthy();
+    });
+
+    act(() => {
+      useDataStore.getState().bumpRevision();
+    });
+
+    await waitFor(() => {
+      expect(container.innerHTML).toBe('');
     });
   });
 });

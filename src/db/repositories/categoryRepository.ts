@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import type { Category } from '@/types';
 import { generateId } from '@/utils/id';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export const categoryRepo = {
   async getAll(): Promise<Category[]> {
@@ -22,6 +23,7 @@ export const categoryRepo = {
       createdAt: Date.now(),
     };
     await db.categories.add(category);
+    notifyDataChanged();
     return category;
   },
 
@@ -29,10 +31,12 @@ export const categoryRepo = {
     await db.categories.update(id, data);
     const updated = await db.categories.get(id);
     if (!updated) throw new Error('Category not found');
+    notifyDataChanged();
     return updated;
   },
 
   async delete(id: string): Promise<void> {
     await db.categories.delete(id);
+    notifyDataChanged();
   },
 };

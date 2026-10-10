@@ -7,9 +7,11 @@ import { formatCurrency } from '@/utils/format';
 import { format } from 'date-fns';
 import { ChevronRight, Wallet, TrendingDown, TrendingUp, Minus, Calendar } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useDataStore } from '@/stores/dataStore';
 
 export function DailyBudgetCard() {
   const navigate = useNavigate();
+  const revision = useDataStore((s) => s.revision);
   const [effectiveBudget, setEffectiveBudget] = useState<number | null>(null);
   const [spent, setSpent] = useState(0);
   const [remaining, setRemaining] = useState(0);
@@ -27,6 +29,13 @@ export function DailyBudgetCard() {
       const { cycleStart: cs, cycleEnd: ce } = await budgetRepo.ensureActiveCycle();
       const budget = await budgetRepo.getTotalBudget(cs, ce);
       if (budget.totalBudget === 0) {
+        setEffectiveBudget(null);
+        setSpent(0);
+        setRemaining(0);
+        setCarryForward(0);
+        setIsOverBudget(false);
+        setSuggestion('');
+        setTotalBudget(0);
         setCycleStart(cs);
         setCycleEnd(ce);
         setLoaded(true);
@@ -59,7 +68,7 @@ export function DailyBudgetCard() {
       setLoaded(true);
     }
     load();
-  }, []);
+  }, [revision]);
 
   if (!loaded || totalBudget === 0 || effectiveBudget === null) return null;
 

@@ -4,9 +4,11 @@ import { debtRepo } from '@/db/repositories/debtRepository';
 import { formatCurrency } from '@/utils/format';
 import { HandCoins, ChevronRight, AlertTriangle, UserPlus, UserMinus } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useDataStore } from '@/stores/dataStore';
 
 export function DebtSummaryWidget() {
   const navigate = useNavigate();
+  const revision = useDataStore((s) => s.revision);
   const [totalOwed, setTotalOwed] = useState(0);
   const [totalOwing, setTotalOwing] = useState(0);
   const [net, setNet] = useState(0);
@@ -28,7 +30,7 @@ export function DebtSummaryWidget() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [revision]);
 
   if (totalOwed === 0 && totalOwing === 0) return null;
 

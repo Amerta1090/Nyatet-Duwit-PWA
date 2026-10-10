@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import type { Account } from '@/types';
 import { generateId } from '@/utils/id';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 type CreateAccountInput = Omit<Account, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -59,6 +60,7 @@ export const accountRepo = {
       });
     }
 
+    notifyDataChanged();
     return account;
   },
 
@@ -76,6 +78,7 @@ export const accountRepo = {
     await db.accounts.update(id, { ...data, updatedAt: now });
     const updated = await db.accounts.get(id);
     if (!updated) throw new Error('Account not found after update');
+    notifyDataChanged();
     return updated;
   },
 
@@ -84,6 +87,7 @@ export const accountRepo = {
     await db.accounts.update(id, { balance: newBalance, updatedAt: now });
     const updated = await db.accounts.get(id);
     if (!updated) throw new Error('Account not found');
+    notifyDataChanged();
     return updated;
   },
 
@@ -94,10 +98,11 @@ export const accountRepo = {
 
   async archive(id: string): Promise<void> {
     await db.accounts.update(id, { isArchived: true, updatedAt: Date.now() });
+    notifyDataChanged();
   },
 
   async reconcileAll(): Promise<{ accountId: string; name: string; expected: number; actual: number; diff: number }[]> {
-    return db.transaction('rw', db.accounts, db.transactions, async () => {
+    const result = await db.transaction('rw', db.accounts, db.transactions, async () => {
       const accounts = await db.accounts.toArray();
       const transactions = await db.transactions.toArray();
       const results: { accountId: string; name: string; expected: number; actual: number; diff: number }[] = [];
@@ -125,5 +130,7 @@ export const accountRepo = {
 
       return results;
     });
+    notifyDataChanged();
+    return result;
   },
 };

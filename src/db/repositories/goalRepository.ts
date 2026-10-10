@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import type { Goal, Account } from '@/types';
 import { generateId } from '@/utils/id';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export interface GoalMilestone {
   goalId: string;
@@ -38,6 +39,7 @@ export const goalRepo = {
       updatedAt: now,
     };
     await db.goals.add(goal);
+    notifyDataChanged();
     return goal;
   },
 
@@ -46,15 +48,17 @@ export const goalRepo = {
     await db.goals.update(id, updateData);
     const updated = await db.goals.get(id);
     if (!updated) throw new Error('Goal not found');
+    notifyDataChanged();
     return updated;
   },
 
   async delete(id: string): Promise<void> {
     await db.goals.delete(id);
+    notifyDataChanged();
   },
 
   async complete(id: string, force?: boolean): Promise<void> {
-    return db.transaction('rw', db.goals, db.accounts, db.transactions, db.categories, async () => {
+    await db.transaction('rw', db.goals, db.accounts, db.transactions, db.categories, async () => {
       const goal = await db.goals.get(id);
       if (!goal) throw new Error('Goal not found');
       if (goal.achievedAt) return;
@@ -99,6 +103,7 @@ export const goalRepo = {
 
       await db.goals.update(id, { achievedAt: now, updatedAt: now });
     });
+    notifyDataChanged();
   },
 
   async getProgressPercent(goal: Goal): Promise<number> {

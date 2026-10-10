@@ -2,6 +2,7 @@ import { db } from '../schema';
 import type { Transaction } from '@/types';
 import { generateId } from '@/utils/id';
 import { encryptTransaction, decryptTransaction, decryptTransactions } from '../encryptionMiddleware';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export interface CreateTransactionInput {
   type: 'income' | 'expense' | 'transfer';
@@ -28,7 +29,7 @@ export interface GetAllOptions {
 
 export const transactionRepo = {
   async create(input: CreateTransactionInput): Promise<Transaction> {
-    return db.transaction('rw', db.transactions, db.accounts, async () => {
+    const created = await db.transaction('rw', db.transactions, db.accounts, async () => {
       const now = Date.now();
       const rawTx: Transaction = {
         id: generateId(),
@@ -58,6 +59,8 @@ export const transactionRepo = {
 
       return rawTx;
     });
+    notifyDataChanged();
+    return created;
   },
 
   async getById(id: string): Promise<Transaction | undefined> {
@@ -153,7 +156,7 @@ export const transactionRepo = {
   },
 
   async update(id: string, data: Partial<Transaction>): Promise<Transaction> {
-    return db.transaction('rw', db.transactions, db.accounts, async () => {
+    const result = await db.transaction('rw', db.transactions, db.accounts, async () => {
       const old = await db.transactions.get(id);
       if (!old) throw new Error('Transaction not found');
       const oldDecrypted = await decryptTransaction(old);
@@ -188,10 +191,12 @@ export const transactionRepo = {
       if (!updated) throw new Error('Transaction not found after update');
       return decryptTransaction(updated);
     });
+    notifyDataChanged();
+    return result;
   },
 
   async delete(id: string): Promise<void> {
-    return db.transaction('rw', db.transactions, db.accounts, async () => {
+    await db.transaction('rw', db.transactions, db.accounts, async () => {
       const old = await db.transactions.get(id);
       if (!old) return;
       const oldDecrypted = await decryptTransaction(old);
@@ -217,6 +222,7 @@ export const transactionRepo = {
 
       await db.transactions.delete(id);
     });
+    notifyDataChanged();
   },
 
   async getTotalByType(type: 'income' | 'expense', dateFrom: number, dateTo: number): Promise<number> {

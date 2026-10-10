@@ -1,6 +1,7 @@
 import { db } from '../schema';
 import { getCycleRange, isCycleExpired, getNewCycleStart } from '@/utils/budgeting';
 import { startOfDay } from 'date-fns';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export interface BudgetSummary {
   categoryId: string;
@@ -28,6 +29,7 @@ export const budgetRepo = {
 
   async setCycleStart(timestamp: number): Promise<void> {
     await db.settings.put({ key: CYCLE_SETTING_KEY, value: String(startOfDay(timestamp).getTime()) });
+    notifyDataChanged();
   },
 
   async ensureActiveCycle(): Promise<{ cycleStart: number; cycleEnd: number; isNew: boolean }> {
@@ -89,9 +91,11 @@ export const budgetRepo = {
 
   async setBudget(categoryId: string, limit: number): Promise<void> {
     await db.categories.update(categoryId, { budgetLimit: limit });
+    notifyDataChanged();
   },
 
   async removeBudget(categoryId: string): Promise<void> {
     await db.categories.update(categoryId, { budgetLimit: undefined as never });
+    notifyDataChanged();
   },
 };

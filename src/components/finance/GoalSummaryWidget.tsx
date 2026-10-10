@@ -4,6 +4,7 @@ import { goalRepo } from '@/db/repositories/goalRepository';
 import { formatCurrency } from '@/utils/format';
 import type { Goal } from '@/types';
 import { Target, ChevronRight, Ellipsis, PiggyBank, Plane, Laptop, Home, Car, GraduationCap, Heart, Gift, Smartphone, Shield, Star } from 'lucide-react';
+import { useDataStore } from '@/stores/dataStore';
 
 const goalIcons: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   piggybank: PiggyBank, plane: Plane, laptop: Laptop, home: Home,
@@ -18,6 +19,7 @@ function GoalIcon({ name, className, style }: { name: string; className?: string
 
 export function GoalSummaryWidget() {
   const navigate = useNavigate();
+  const revision = useDataStore((s) => s.revision);
   const [topGoals, setTopGoals] = useState<(Goal & { currentAmount: number; percent: number; color: string })[]>([]);
   const [totalProgress, setTotalProgress] = useState({ totalTarget: 0, totalCurrent: 0, totalPercent: 0, goalCount: 0 });
   const [nearestDeadline, setNearestDeadline] = useState<Goal | null>(null);
@@ -44,7 +46,7 @@ export function GoalSummaryWidget() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [revision]);
 
   if (totalProgress.goalCount === 0) return null;
 

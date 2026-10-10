@@ -6,6 +6,7 @@ import { getWeekRange } from '@/utils/date';
 import { formatCurrency } from '@/utils/format';
 import { TrendingUp, TrendingDown, ChevronRight, Calendar } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useDataStore } from '@/stores/dataStore';
 
 interface WeeklySummaryCardProps {
   onData?: (data: { totalExpense: number; totalIncome: number; topCategory?: string }) => void;
@@ -13,6 +14,7 @@ interface WeeklySummaryCardProps {
 
 export function WeeklySummaryCard({ onData }: WeeklySummaryCardProps) {
   const navigate = useNavigate();
+  const revision = useDataStore((s) => s.revision);
   const [totalExpense, setTotalExpense] = useState<number | null>(null);
   const [totalIncome, setTotalIncome] = useState<number | null>(null);
   const [prevExpense, setPrevExpense] = useState<number | null>(null);
@@ -47,7 +49,7 @@ export function WeeklySummaryCard({ onData }: WeeklySummaryCardProps) {
       });
     }
     load();
-  }, [onData]);
+  }, [onData, revision]);
 
   if (totalExpense === null || totalIncome === null) return null;
   if (totalExpense === 0 && totalIncome === 0) return null;

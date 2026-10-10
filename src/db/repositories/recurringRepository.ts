@@ -2,6 +2,7 @@ import { db } from '../schema';
 import type { RecurringTransaction } from '@/types';
 import { generateId } from '@/utils/id';
 import { startOfDay } from '@/utils/date';
+import { notifyDataChanged } from '@/stores/dataStore';
 
 export interface RecurringInput {
   template: {
@@ -39,6 +40,7 @@ export const recurringRepo = {
       lastGenerated: now,
     };
     await db.recurring.add(rec);
+    notifyDataChanged();
     return rec;
   },
 
@@ -46,24 +48,29 @@ export const recurringRepo = {
     await db.recurring.update(id, data);
     const updated = await db.recurring.get(id);
     if (!updated) throw new Error('Recurring not found');
+    notifyDataChanged();
     return updated;
   },
 
   async delete(id: string): Promise<void> {
     await db.recurring.delete(id);
+    notifyDataChanged();
   },
 
   async generateDue(): Promise<void> {
     const actives = (await db.recurring.toArray()).filter((r) => r.isActive);
     const now = startOfDay(Date.now());
+    let generated = false;
     for (const rec of actives) {
       if (rec.endDate && now > rec.endDate) continue;
       if (now < rec.startDate) continue;
       const due = isDue(rec);
       if (due) {
         await generateTransaction(rec);
+        generated = true;
       }
     }
+    if (generated) notifyDataChanged();
   },
 };
 
